@@ -32,17 +32,50 @@ function box(w,h,d,c,x=0,y=0,z=0,p){const m=new T.Mesh(new T.BoxGeometry(w,h,d),
 function cyl(rt,rb,h,c,x,y,z,seg=12){const m=new T.Mesh(new T.CylinderGeometry(rt,rb,h,seg),M(c));m.position.set(x,y,z);return m}
 function sph(r,c,x,y,z,sx=1,sy=1,sz=1){const m=new T.Mesh(new T.SphereGeometry(r,20,16),M(c));m.position.set(x,y,z);m.scale.set(sx,sy,sz);return m}
 
-// ---------- ЦЫПА ----------
-const chick=new T.Group(),body=new T.Group();chick.add(body);
-body.add(sph(.62,0xffa726,0,.95,0,1,1,.95));                       // пушистое тело
-for(let i=0;i<14;i++){const a=i/14*6.28;body.add(sph(.2,0xffb53d,Math.cos(a)*.52,.95+Math.sin(a*2)*.25,Math.sin(a)*.4,1,1,1))}
-const shell=new T.Mesh(new T.SphereGeometry(.64,20,12,0,6.283,1.7,1.45),new T.MeshLambertMaterial({color:0xe2b98e,side:T.DoubleSide}));shell.position.y=.78;body.add(shell);
-for(let i=0;i<9;i++){const a=i/9*6.28;const t=new T.Mesh(new T.ConeGeometry(.09,.2,4),M(0xf3d9b8));t.position.set(Math.cos(a)*.6,1.02,Math.sin(a)*.6);body.add(t)} // зубчики скорлупы
-[-.25,.25].forEach(x=>{body.add(sph(.2,0xffffff,x,1.2,.52,1,1.1,.6),sph(.12,0x3b9de8,x,1.2,.66,1,1,.5),sph(.06,0x111111,x,1.2,.72,1,1,.5))});
-const beak=new T.Mesh(new T.ConeGeometry(.08,.16,6),M(0xf06a1a));beak.rotation.x=Math.PI/2;beak.position.set(0,1.03,.62);body.add(beak);
-for(let i=0;i<3;i++){const t=new T.Mesh(new T.ConeGeometry(.04,.45,5),M(0xffa726));t.position.set((i-1)*.1,1.7,0);t.rotation.z=(i-1)*-.35;body.add(t)}
-const wingL=new T.Group(),wingR=new T.Group();[wingL,wingR].forEach((w,i)=>{w.add(sph(.2,0xffa726,0,-.2,0,.5,1.4,.8));w.position.set(i?.62:-.62,1.1,0);body.add(w)});
-const legs=[-.2,.2].map(x=>{const g=new T.Group();g.position.set(x,.5,0);g.add(cyl(.03,.03,.5,0xf08a1a,0,-.25,0,6));const f=box(.28,.05,.34,0xf08a1a,0,-.5,.1,g);chick.add(g);return g});
+// ---------- ЦЫПА (по картинке, вид со спины) ----------
+function tex(base,strokes,w=256,alpha=false){const c=document.createElement('canvas');c.width=c.height=w;const x=c.getContext('2d');
+ if(!alpha){x.fillStyle=base;x.fillRect(0,0,w,w)}
+ for(const [col,n,len,lw] of strokes){x.strokeStyle=col;x.lineWidth=lw;for(let i=0;i<n;i++){const px=Math.random()*w,py=Math.random()*w,a=Math.PI/2+(Math.random()-.5)*.8;x.beginPath();x.moveTo(px,py);x.lineTo(px+Math.cos(a)*len,py+Math.sin(a)*len);x.stroke()}}
+ const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;return t}
+const furTex=tex('#f5a21c',[['#ffc54d',2200,12,1.6],['#e8861a',1500,10,1.3],['#ffd873',800,9,1]]);furTex.repeat.set(3,2);
+const fuzzTex=tex(0,[['rgba(255,190,70,.95)',900,16,1.8],['rgba(240,140,25,.9)',500,14,1.5]],256,true);fuzzTex.repeat.set(3,2);
+const shellTex=tex('#e3b98c',[['#cf9f72',700,5,3],['#f0d1ab',500,6,2]]);
+{const x=shellTex.image.getContext('2d');x.fillStyle='#b98a60';for(let i=0;i<40;i++){x.beginPath();x.ellipse(Math.random()*256,Math.random()*256,3+Math.random()*4,2+Math.random()*3,0,0,6.3);x.fill()}shellTex.needsUpdate=true}
+const furM=new T.MeshLambertMaterial({map:furTex});
+const chick=new T.Group(),body=new T.Group(),model=new T.Group();chick.add(model);model.add(body);
+const BY=1.0;
+const core=new T.Mesh(new T.SphereGeometry(.66,32,24),furM);core.position.y=BY;core.scale.set(1.05,1,.97);body.add(core);
+for(let i=1;i<=4;i++){const l=new T.Mesh(new T.SphereGeometry(.66+i*.022,28,20),new T.MeshLambertMaterial({map:fuzzTex,transparent:true,alphaTest:.08,depthWrite:false}));l.position.y=BY;l.scale.set(1.05,1,.97);body.add(l)}
+// ворс по контуру
+const cm=[0xf6a31c,0xffbf45,0xe8861a].map(c=>M(c));
+for(let i=0;i<170;i++){const u=Math.random()*6.283,v=Math.acos(2*Math.random()-1);if(Math.cos(v)<-.35)continue;
+ const n=new T.Vector3(Math.sin(v)*Math.cos(u)*1.05,Math.cos(v),Math.sin(v)*Math.sin(u)*.97);const t=new T.Mesh(new T.ConeGeometry(.045,.2+Math.random()*.12,4),cm[i%3]);
+ t.position.copy(n).multiplyScalar(.68).add(new T.Vector3(0,BY,0));t.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),n.clone().normalize());body.add(t)}
+// скорлупа
+const shell=new T.Mesh(new T.SphereGeometry(.72,36,18,0,6.283,1.78,1.36),new T.MeshLambertMaterial({map:shellTex,side:T.DoubleSide}));shell.position.y=.9;shell.scale.set(1.04,1,1);body.add(shell);
+const rimR=.72*Math.sin(1.78)*1.04,rimY=.9+.72*Math.cos(1.78);
+for(let i=0;i<22;i++){const a=i/22*6.283,t=new T.Mesh(new T.ConeGeometry(.085,.2,3),new T.MeshLambertMaterial({map:shellTex}));t.position.set(Math.cos(a)*rimR,rimY+.07,Math.sin(a)*rimR*.98);t.rotation.y=-a;t.rotation.x=0;body.add(t)}
+// хохолок
+[[-.06,.62,.1,.5],[.02,.78,0,.12],[.12,.66,-.05,-.55]].forEach(([x,h,z,r],i)=>{const g=new T.Group();const f=new T.Mesh(new T.ConeGeometry(.045,h,5),M(0xffa726));f.position.y=h/2;g.add(f);const tip=new T.Mesh(new T.ConeGeometry(.03,h*.4,5),M(0xffc54d));tip.position.set(Math.sin(r)*.05,h*.95,0);tip.rotation.z=-r*.6;g.add(tip);g.position.set(x,BY+.6,z);g.rotation.z=-r*.55;g.rotation.x=-.15;body.add(g)});
+// лицо (видно в меню)
+const face=new T.Group();[-.26,.26].forEach(x=>{face.add(sph(.215,0xffffff,x,1.14,.56,1,1.05,.55),sph(.125,0x3b9de8,x,1.14,.72,1,1,.35),sph(.065,0x0b1a2a,x,1.14,.78,1,1,.3),sph(.03,0xffffff,x+.03,1.18,.82,1,1,.3))});
+const bk=new T.Mesh(new T.ConeGeometry(.07,.14,6),M(0xf06a1a));bk.rotation.x=Math.PI/2;bk.position.set(0,.98,.68);face.add(bk);
+[-.26,.26].forEach(x=>{const b=box(.2,.025,.03,0xd9741a,x,1.4,.6,face);b.rotation.z=x<0?-.25:.25});body.add(face);
+// хвостик
+for(let i=0;i<5;i++){const t=new T.Mesh(new T.ConeGeometry(.05,.3,5),M(i%2?0xffb53d:0xf6a31c));t.position.set((i-2)*.07,.8+(i%2)*.06,-.68);t.rotation.x=-1.9;t.rotation.z=(i-2)*.2;body.add(t)}
+// крылья
+function mkWing(s){const w=new T.Group();const m=new T.Mesh(new T.SphereGeometry(.3,18,14),furM);m.scale.set(.32,1.5,.75);m.position.set(s*.08,-.32,0);w.add(m);
+ for(let i=0;i<4;i++){const f=new T.Mesh(new T.ConeGeometry(.07,.28,4),M(i%2?0xffb53d:0xf29a1c));f.position.set(s*(.07+(i-1.5)*.02),-.72,(i-1.5)*.1);f.rotation.x=Math.PI;f.rotation.z=(i-1.5)*.1;w.add(f)}
+ w.position.set(s*.7,1.15,0);return w}
+const wingL=mkWing(-1),wingR=mkWing(1);body.add(wingL,wingR);
+// ноги: бедро -> голень -> стопа с 3 пальцами
+const legM=M(0xf08a1a);
+const legs=[-.2,.2].map(x=>{const hip=new T.Group();hip.position.set(x,.42,0);hip.add(cyl(.032,.028,.26,0xf08a1a,0,-.13,0,6));
+ const knee=new T.Group();knee.position.y=-.26;knee.add(cyl(.028,.025,.26,0xf08a1a,0,-.13,0,6));
+ const foot=new T.Group();foot.position.y=-.26;[-.12,0,.12].forEach((a,i)=>{const t=new T.Mesh(new T.BoxGeometry(.05,.03,.26),legM);t.position.set(a*.7,.01,-.1);t.rotation.y=a*1.3;foot.add(t)});
+ const heel=new T.Mesh(new T.BoxGeometry(.07,.03,.08),legM);heel.position.set(0,.01,.02);foot.add(heel);knee.add(foot);hip.add(knee);hip.knee=knee;hip.foot=foot;model.add(hip);return hip});
+const blob=new T.Mesh(new T.CircleGeometry(.7,20),new T.MeshBasicMaterial({color:0,transparent:true,opacity:.28,depthWrite:false}));blob.rotation.x=-Math.PI/2;blob.position.y=.03;scene.add(blob);
+model.rotation.y=0;
 scene.add(chick);
 
 // ---------- МИР ----------
@@ -79,9 +112,9 @@ function addObs(type,lane,z){const g=type=='car'?car():type=='low'?barrier():bar
 function addCoin(lane,z,y=.9){const m=new T.Mesh(coinG,coinM);m.rotation.z=Math.PI/2;m.position.set(LANES[lane],y,z);scene.add(m);items.push({g:m,type:'coin',lane,z,y});}
 
 // ---------- ИГРА ----------
-let st='menu',speed,dist,coins,score,lane,px,py,vy,sliding,slideT,nextSpawn,runT,best=0,deadT;
+let turnY=0,prevAir=false,landT=0,st='menu',speed,dist,coins,score,lane,px,py,vy,sliding,slideT,nextSpawn,runT,best=0,deadT;
 try{best=+localStorage.cyp||0}catch(e){}
-function reset(){items.forEach(i=>scene.remove(i.g));items.length=0;speed=14;dist=0;coins=0;score=0;lane=1;px=0;py=0;vy=0;sliding=false;slideT=0;nextSpawn=-30;runT=0;deadT=0;chick.rotation.set(0,0,0);body.scale.set(1,1,1)}
+function reset(){items.forEach(i=>scene.remove(i.g));items.length=0;speed=14;dist=0;coins=0;score=0;lane=1;px=0;py=0;vy=0;sliding=false;slideT=0;nextSpawn=-30;runT=0;deadT=0;body.rotation.set(0,0,0);body.position.y=0;body.scale.set(1,1,1)}
 function spawn(){const z=nextSpawn,r=Math.random();
  if(r<.3){const l=Math.random()*3|0;addObs('car',l,z);if(Math.random()<.5)addObs('car',(l+1+(Math.random()*2|0))%3,z);const f=[0,1,2].filter(i=>!items.some(o=>o.z==z&&o.lane==i&&o.type=='car'));for(let k=0;k<5;k++)addCoin(f[0],z-k*2)}
  else if(r<.55){const l=Math.random()*3|0;addObs('low',l,z);for(let k=-2;k<=2;k++)addCoin(l,z+k*1.6,1.1+(2-Math.abs(k))*.35)}
@@ -121,15 +154,28 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000
    if(o.z>10){scene.remove(o.g);items.splice(i,1)}}
   $('dist').textContent=Math.floor(dist);$('coins').textContent=coins;$('score').textContent=Math.floor(score);
  }
- if(st=='dead'){deadT+=dt;chick.rotation.x=Math.min(deadT*4,1.4);chick.position.y=Math.max(0,.3-deadT)}
- else{ // анимация цыпы
-  const s=Math.sin(runT*1.6),air=py>.05;
-  chick.position.set(px,py,0);chick.rotation.z=(LANES[lane]-px)*-.12;
-  body.position.y=air||sliding?0:Math.abs(s)*.12;
-  body.scale.set(1,sliding&&!air?.55:air?1.12:1,1);
-  legs[0].rotation.x=air?.6:s*.9;legs[1].rotation.x=air?-.3:-s*.9;
-  const f=air?.9:s*.5;wingL.rotation.z=.2+f;wingR.rotation.z=-.2-f;
-  if(st=='menu'){wingR.rotation.z=-1.2+Math.sin(now/180)*.3;chick.rotation.y=Math.sin(now/700)*.5}else chick.rotation.y=0}
+ if(st=='dead'){deadT+=dt;body.rotation.x=Math.min(deadT*5,1.5);body.position.y=Math.max(0,.2-deadT*.3);wingL.rotation.z=wingR.rotation.z=-1.3;legs.forEach(l=>{l.rotation.x=.5;l.knee.rotation.x=0})}
+ else{const sw=Math.sin(runT*1.7),cs=Math.cos(runT*1.7),air=py>.05,run=st=='run';
+  const tgt=run?Math.PI:0;turnY+=(tgt-turnY)*Math.min(1,dt*7);
+  if(prevAir&&!air){landT=.22}prevAir=air;landT=Math.max(0,landT-dt);
+  const lean=(LANES[lane]-px);
+  chick.position.set(px,py,0);blob.position.set(px,.03,0);const sc=Math.max(.4,1-py*.25);blob.scale.set(sc,sc,sc);
+  model.rotation.set(0,turnY+(run?lean*.18:0),run?-lean*.12:0);
+  let sy=1,sxz=1,by=0,tilt=0;
+  if(run){
+   if(sliding&&!air){tilt=.95;by=-.15;sy=.9}
+   else if(air){sy=vy>0?1.1:1.02;sxz=1/Math.sqrt(sy);tilt=vy>0?.08:-.1}
+   else{by=Math.abs(sw)*.1;tilt=.1+(speed-14)*.004;sy=1+cs*.025;sxz=1-cs*.015}
+   if(landT>0){const k=Math.sin(landT/.22*Math.PI);sy*=1-.22*k;sxz*=1+.14*k}}
+  body.position.y=by;body.rotation.x=tilt;body.scale.set(sxz,sy,sxz);body.rotation.z=run?Math.sin(runT*1.7)*.05:0;
+  face.visible=!run||turnY<2.9;
+  if(run&&!(sliding&&!air)){const a=air?0:sw;
+   legs[0].rotation.x=air?.9:a*1.0;legs[1].rotation.x=air?-.5:-a*1.0;
+   legs[0].knee.rotation.x=air?-1.2:Math.max(0,-cs>0?0:0)+Math.max(0,Math.cos(runT*1.7+1.2))*-1.0;legs[1].knee.rotation.x=air?-.6:Math.max(0,-Math.cos(runT*1.7+1.2))*-1.0;
+   legs.forEach(l=>l.foot.rotation.x=-l.rotation.x*.4-l.knee.rotation.x*.5);
+   const f=air?1.1:Math.abs(sw)*.5;wingL.rotation.z=.25+f;wingR.rotation.z=-.25-f;wingL.rotation.x=wingR.rotation.x=air?0:sw*.35}
+  else if(run){legs.forEach(l=>{l.rotation.x=1.1;l.knee.rotation.x=-1.4;l.foot.rotation.x=.6});wingL.rotation.z=1.2;wingR.rotation.z=-1.2;wingL.rotation.x=wingR.rotation.x=.9}
+  else{legs.forEach(l=>{l.rotation.x=0;l.knee.rotation.x=0;l.foot.rotation.x=0});wingL.rotation.z=.15;wingL.rotation.x=0;wingR.rotation.x=0;wingR.rotation.z=-1.9+Math.sin(now/170)*.4;body.position.y=Math.abs(Math.sin(now/500))*.05;model.rotation.y=Math.sin(now/900)*.25}}
  cam.position.set(px*.55,4.2+py*.25,6.5);cam.lookAt(px*.3,1.3,-8);
  renderer.render(scene,cam)}
 requestAnimationFrame(loop);
