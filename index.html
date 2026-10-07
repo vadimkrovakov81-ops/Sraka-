@@ -9,13 +9,14 @@
 button{width:100%;border:0;border-radius:18px;padding:16px;font-size:22px;font-weight:900;color:#2a1a00;background:linear-gradient(#ffe978,#ffb72d);box-shadow:0 7px 0 #9c641b;cursor:pointer}
 button:active{transform:translateY(4px);box-shadow:0 3px 0 #9c641b}
 .tips{display:flex;gap:8px;margin-top:16px;font-size:12px}.tips div{flex:1;background:#ffffff18;border-radius:12px;padding:9px 4px}.tips b{display:block;font-size:20px}
-.hidden{display:none!important}
+.hidden{display:none!important}#bon{position:absolute;left:50%;top:calc(66px + env(safe-area-inset-top));transform:translateX(-50%);background:linear-gradient(#2a5bd7,#16347f);border:2px solid #ffd54f;border-radius:18px;padding:6px 16px;font-weight:900;white-space:nowrap}#toast{position:absolute;left:50%;top:32%;transform:translateX(-50%) scale(.8);font:900 34px Arial;color:#ffd54f;text-shadow:0 3px 8px #000a;opacity:0;transition:.25s}#toast.show{opacity:1;transform:translateX(-50%) scale(1)}
 </style></head><body><canvas id="c"></canvas>
 <div id="ui"><div id="hud" class="hud hidden"><div class="pill">🏃 <span id="dist">0</span> м</div><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">⭐ <span id="score">0</span></div></div>
+<div id="bon" class="hidden">👮 ×2 монет · <span id="bt">0</span> с</div><div id="toast"></div>
 <div id="menu" class="center"><div class="panel"><div class="logo">🐥 ЦЫП-ЦЫП</div><div class="sub">Беги, прыгай, собирай монеты!</div><button id="start">▶ ИГРАТЬ</button>
 <div class="tips"><div><b>← →</b>Полосы</div><div><b>↑</b>Прыжок</div><div><b>↓</b>Подкат</div></div><div class="sub" style="margin:14px 0 0;font-size:12px">Свайпы на телефоне • стрелки / WASD на компьютере</div></div></div>
 <div id="over" class="center hidden"><div class="panel"><div class="logo">💥 ОЙ!</div><div class="sub">Счёт: <b id="fs">0</b> • монет: <b id="fc">0</b> • рекорд: <b id="best">0</b></div><button id="again">↻ ЕЩЁ РАЗ</button></div></div></div>
-<audio id="music" src="cypa_song.mp3" loop preload="auto"></audio>
+<audio id="bsong" src="police_song.mp3" preload="auto"></audio><audio id="music" src="cypa_song.mp3" loop preload="auto"></audio>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 'use strict';
@@ -61,6 +62,12 @@ for(let i=0;i<22;i++){const a=i/22*6.283,t=new T.Mesh(new T.ConeGeometry(.085,.2
 const face=new T.Group();[-.26,.26].forEach(x=>{face.add(sph(.215,0xffffff,x,1.14,.56,1,1.05,.55),sph(.125,0x3b9de8,x,1.14,.72,1,1,.35),sph(.065,0x0b1a2a,x,1.14,.78,1,1,.3),sph(.03,0xffffff,x+.03,1.18,.82,1,1,.3))});
 const bk=new T.Mesh(new T.ConeGeometry(.07,.14,6),M(0xf06a1a));bk.rotation.x=Math.PI/2;bk.position.set(0,.98,.68);face.add(bk);
 [-.26,.26].forEach(x=>{const b=box(.2,.025,.03,0xd9741a,x,1.4,.6,face);b.rotation.z=x<0?-.25:.25});body.add(face);
+// полицейский наряд (показывается во время бонуса)
+const outfit=new T.Group();
+outfit.add(cyl(.5,.6,.2,0x1a2f6b,0,1.63,0,24),cyl(.66,.52,.16,0x16347f,0,1.76,0,24));
+{const br=box(.78,.05,.42,0x0d1a3d,0,1.55,.62,outfit);br.rotation.x=.12;const bd=sph(.1,0xffd54f,0,1.72,.6,1,1.2,.3);outfit.add(bd);outfit.add(cyl(.5,.5,.04,0xffd54f,0,1.665,0,24))}
+[-.26,.26].forEach(x=>outfit.add(sph(.25,0x0a0a0a,x,1.14,.7,1,.85,.35),box(.04,.04,.75,0x0a0a0a,x*2.05,1.17,.25,outfit)));
+box(.2,.05,.05,0x0a0a0a,0,1.17,.8,outfit);outfit.visible=false;body.add(outfit);
 // хвостик
 for(let i=0;i<5;i++){const t=new T.Mesh(new T.ConeGeometry(.05,.3,5),M(i%2?0xffb53d:0xf6a31c));t.position.set((i-2)*.07,.8+(i%2)*.06,-.68);t.rotation.x=-1.9;t.rotation.z=(i-2)*.2;body.add(t)}
 // крылья
@@ -126,6 +133,8 @@ function car(){const g=new T.Group(),c=[0xe53935,0x1e88e5,0xfdd835,0x8e24aa][Mat
  box(.4,.2,.05,0xffff99,-.6,.8,1.92,g);box(.4,.2,.05,0xffff99,.6,.8,1.92,g);return g}
 function barrier(){const g=new T.Group();box(2.2,.5,.4,0xff7043,0,.65,0,g);box(2.2,.2,.42,0xffffff,0,.65,0,g);box(.15,.5,.15,0x666666,-.9,.25,0,g);box(.15,.5,.15,0x666666,.9,.25,0,g);return g}
 function bar(){const g=new T.Group();box(.25,3,.25,0x666666,-1.05,1.5,0,g);box(.25,3,.25,0x666666,1.05,1.5,0,g);box(2.3,.7,.3,0xffd600,0,1.9,0,g);box(.5,.7,.32,0x222222,-.6,1.9,0,g);box(.5,.7,.32,0x222222,.5,1.9,0,g);return g}
+function badge(){const g=new T.Group(),d=new T.Group();d.add(cyl(.5,.5,.12,0x1f4fc4,0,0,0,24),cyl(.56,.56,.08,0xffd54f,0,0,0,24),cyl(.4,.4,.14,0x16347f,0,0,0,24),cyl(.3,.3,.18,0xffd54f,0,0,0,5));d.rotation.z=Math.PI/2;g.add(d);
+ const gl=new T.Mesh(new T.SphereGeometry(.85,12,10),new T.MeshBasicMaterial({color:0x6fa8ff,transparent:true,opacity:.25,depthWrite:false}));g.add(gl);g.scale.set(1.3,1.3,1.3);return g}
 const coinG=new T.CylinderGeometry(.38,.38,.1,16),coinM=new T.MeshLambertMaterial({color:0xffc400,emissive:0x664400});
 function truck(){const g=new T.Group();box(2.2,2.5,5,0xf5f5f5,0,1.9,.8,g);box(2.2,.5,5,[0x1e88e5,0xe53935,0x43a047][Math.random()*3|0],0,.9,.8,g);box(2.1,1.7,1.5,0xfb8c00,0,1.4,-2.7,g);box(1.8,.7,.1,0xaee3ff,0,1.8,-3.47,g);
  [-1.1,1.1].forEach(x=>[-2.6,0,1.9,3].forEach(z=>{const w=cyl(.45,.45,.3,0x222222,x,.45,z);w.rotation.z=Math.PI/2;g.add(w)}));return g}
@@ -133,13 +142,14 @@ function cones(){const g=new T.Group();[-.8,0,.8].forEach(x=>{g.add(cyl(.05,.3,.
 function addObs(type,lane,z,v=0){const g=type=='truck'?truck():type=='cone'?cones():type=='low'?barrier():type=='high'?bar():car();
  if(type=='slow')g.rotation.y=Math.PI;
  g.position.set(LANES[lane],0,z);scene.add(g);items.push({g,type:type=='oncoming'||type=='slow'?'car':type,lane,z,v,hl:type=='truck'?4:type=='cone'||type=='low'?.5:2});}
+function addBadge(lane,z){const g=badge();g.position.set(LANES[lane],1.3,z);scene.add(g);items.push({g,type:"badge",lane,z,y:1.3})}
 function addCoin(lane,z,y=.9){const m=new T.Mesh(coinG,coinM);m.rotation.z=Math.PI/2;m.position.set(LANES[lane],y,z);scene.add(m);items.push({g:m,type:'coin',lane,z,y});}
 
 // ---------- ИГРА ----------
-let introT=0,camZ=4.6,turnY=0,prevAir=false,landT=0,st='menu',speed,dist,coins,score,lane,px,py,vy,sliding,slideT,nextSpawn,runT,best=0,deadT;
+let music=$('music'),introT=0,camZ=4.6,turnY=0,prevAir=false,landT=0,st='menu',speed,dist,coins,score,lane,px,py,vy,sliding,slideT,nextSpawn,runT,best=0,deadT;
 try{best=+localStorage.cyp||0}catch(e){}
-function reset(){items.forEach(i=>scene.remove(i.g));items.length=0;speed=14;dist=0;coins=0;score=0;lane=1;px=0;py=0;vy=0;sliding=false;slideT=0;nextSpawn=-30;runT=0;deadT=0;body.rotation.set(0,0,0);body.position.y=0;body.scale.set(1,1,1)}
-function spawn(){const z=nextSpawn,r=Math.random(),l=Math.random()*3|0,l2=(l+1+(Math.random()*2|0))%3,free=[0,1,2].filter(i=>i!=l&&i!=l2);
+function reset(){try{stopBonus()}catch(e){};items.forEach(i=>scene.remove(i.g));items.length=0;speed=14;dist=0;coins=0;score=0;lane=1;px=0;py=0;vy=0;sliding=false;slideT=0;nextSpawn=-30;runT=0;deadT=0;body.rotation.set(0,0,0);body.position.y=0;body.scale.set(1,1,1)}
+function spawn(){const z=nextSpawn;if(bonusT<=0&&Math.random()<.12&&!items.some(o=>o.type=='badge'))addBadge(Math.random()*3|0,z-9);const r=Math.random(),l=Math.random()*3|0,l2=(l+1+(Math.random()*2|0))%3,free=[0,1,2].filter(i=>i!=l&&i!=l2);
  const line=(ln,n,y)=>{for(let k=0;k<n;k++)addCoin(ln,z-k*2,y)};
  if(r<.14){addObs('car',l,z);if(Math.random()<.5)addObs('car',l2,z);line(free[0],6)}
  else if(r<.30){addObs('oncoming',l,z-20,12);if(Math.random()<.4)addObs('oncoming',l2,z-35,12);line(free[0],5)}
@@ -150,14 +160,19 @@ function spawn(){const z=nextSpawn,r=Math.random(),l=Math.random()*3|0,l2=(l+1+(
  else if(r<.88){addObs('high',l,z);if(Math.random()<.5)addObs('car',l2,z);for(let k=0;k<4;k++)addCoin(l,z+k*1.5,.6)}
  else{const n=8+(Math.random()*6|0);line(l,n)}
  nextSpawn-=16+Math.random()*10+speed*.35}
-function die(){st='dead';deadT=0;const sc=Math.floor(score);if(sc>best){best=sc;try{localStorage.cyp=best}catch(e){}}
+const bs=$('bsong');let bonusT=0;
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1200)}
+function startBonus(){bonusT=24;outfit.visible=true;outfit.scale.set(.1,.1,.1);$('bon').classList.remove('hidden');music.pause();bs.currentTime=0;bs.play().catch(()=>{});toast('👮 ×2 МОНЕТЫ!')}
+function stopBonus(){if(bonusT>0)music.play().catch(()=>{});bonusT=0;outfit.visible=false;bs.pause();$('bon').classList.add('hidden')}
+bs.addEventListener('ended',()=>{if(bonusT>0)stopBonus()});
+function die(){stopBonus();st='dead';deadT=0;const sc=Math.floor(score);if(sc>best){best=sc;try{localStorage.cyp=best}catch(e){}}
  $('fs').textContent=sc;$('fc').textContent=coins;$('best').textContent=best;setTimeout(()=>{$('over').classList.remove('hidden');$('hud').classList.add('hidden')},700)}
 function left(){if(st=='run'&&lane>0)lane--}function right(){if(st=='run'&&lane<2)lane++}
 function jump(){if(st=='run'&&py<.05){vy=11;sliding=false}}function slide(){if(st!='run')return;if(py>.05)vy=-16;sliding=true;slideT=.7}
 addEventListener('keydown',e=>{const k=e.key;if(k=='ArrowLeft'||k=='a')left();if(k=='ArrowRight'||k=='d')right();if(k=='ArrowUp'||k=='w'||k==' ')jump();if(k=='ArrowDown'||k=='s')slide()});
 let tx,ty;addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
 addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.max(Math.abs(dx),Math.abs(dy))<24)jump();else if(Math.abs(dx)>Math.abs(dy))dx<0?left():right();else dy<0?jump():slide();tx=null},{passive:true});
-function begin(){reset();st='intro';introT=0;$('menu').classList.add('hidden');$('over').classList.add('hidden');$('hud').classList.add('hidden');const m=$('music');m.currentTime=0;m.play().catch(()=>{})}
+function begin(){reset();st='intro';introT=0;$('menu').classList.add('hidden');$('over').classList.add('hidden');$('hud').classList.add('hidden');const m=$('music');if(typeof stopBonus=='function')stopBonus();m.currentTime=0;m.play().catch(()=>{})}
 $('start').onclick=begin;$('again').onclick=begin;
 reset();
 
@@ -179,11 +194,12 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000
   birds.forEach(b=>{b.position.z+=mv-4*dt;b.position.x+=dt*2;if(b.position.z>20){b.position.z-=170;b.position.x=(Math.random()-.5)*60}});
   nextSpawn+=mv;while(nextSpawn>-150)spawn();
   for(let i=items.length-1;i>=0;i--){const o=items[i];o.z+=mv+(o.v||0)*dt;o.g.position.z=o.z;
-   if(o.type=='coin'){o.g.rotation.y+=dt*5;if(Math.abs(o.z)<.9&&Math.abs(LANES[o.lane]-px)<1&&Math.abs(o.y-(py+.7))<1.2){coins++;score+=10;scene.remove(o.g);items.splice(i,1);continue}}
+   if(o.type=='coin'||o.type=='badge'){o.g.rotation.y+=dt*5;if(o.type=='badge'){const p=1.3+Math.sin(now/150)*.1;o.g.scale.set(p,p,p)}if(Math.abs(o.z)<.9&&Math.abs(LANES[o.lane]-px)<1&&Math.abs(o.y-(py+.7))<1.2){if(o.type=='badge')startBonus();else{const m=bonusT>0?2:1;coins+=m;score+=10*m}scene.remove(o.g);items.splice(i,1);continue}}
    else if(Math.abs(o.z)<o.hl+.35&&Math.abs(LANES[o.lane]-px)<.95){
     const hit=o.type=='car'?py<1.7:o.type=='truck'?py<2.8:(o.type=='low'||o.type=='cone')?py<.85:!(sliding&&py<.05);
     if(hit){die()}}
    if(o.z>10){scene.remove(o.g);items.splice(i,1)}}
+  if(bonusT>0){bonusT-=dt;$('bt').textContent=Math.max(0,Math.ceil(bonusT));if(bonusT<=0)stopBonus()}
   $('dist').textContent=Math.floor(dist);$('coins').textContent=coins;$('score').textContent=Math.floor(score);
  }
  if(st=='dead'){deadT+=dt;body.rotation.x=Math.min(deadT*5,1.5);body.position.y=Math.max(0,.2-deadT*.3);wingL.rotation.z=wingR.rotation.z=-1.3;legs.forEach(l=>{l.rotation.x=.5;l.knee.rotation.x=0})}
@@ -208,6 +224,7 @@ function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000
    const f=air?1.1:Math.abs(sw)*.5;wingL.rotation.z=.25+f;wingR.rotation.z=-.25-f;wingL.rotation.x=wingR.rotation.x=air?0:sw*.35}
   else if(run){legs.forEach(l=>{l.rotation.x=1.1;l.knee.rotation.x=-1.4;l.foot.rotation.x=.6});wingL.rotation.z=1.2;wingR.rotation.z=-1.2;wingL.rotation.x=wingR.rotation.x=.9}
   else{legs.forEach(l=>{l.rotation.x=0;l.knee.rotation.x=0;l.foot.rotation.x=0});wingL.rotation.z=.15;wingL.rotation.x=0;wingR.rotation.x=0;wingR.rotation.z=-1.9+Math.sin(now/170)*.4;body.position.y=Math.abs(Math.sin(now/500))*.05;model.rotation.y=turnY+Math.sin(now/900)*.25*Math.max(0,1-turnY/2)}}
+ if(outfit.visible){const q=Math.min(1,outfit.scale.x+dt*5);outfit.scale.set(q,q,q)}
  const kz=st=='run'||st=='dead'?1:0;camZ+=((kz?6.5:4.6)-camZ)*Math.min(1,dt*3);const k=(camZ-4.6)/1.9;cam.position.set(px*.55,2.4+1.8*k+py*.25,camZ);cam.lookAt(px*.3,1.1+.2*k,-8*k);
  renderer.render(scene,cam)}
 requestAnimationFrame(loop);
