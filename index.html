@@ -179,15 +179,19 @@ function spawn(){const z=nextSpawn;if(bonusT<=0&&sleepT<=0&&!items.some(o=>o.typ
  nextSpawn-=16+Math.random()*10+speed*.35}
 const bs=$('bsong'),ss=$('ssong');let bonusT=0;
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1200)}
-function startBonus(){if(sleepT>0)return;bonusT=26;outfit.visible=true;outfit.scale.set(.1,.1,.1);$('bon').classList.remove('hidden');bs.muted=false;bs.currentTime=0;const pp=bs.play();if(pp&&pp.then)pp.then(()=>music.pause()).catch(()=>{});else music.pause();toast('👮 ×2 МОНЕТЫ!');chirp(2,.15)}
-function stopBonus(){const was=bonusT>0||outfit.visible;bonusT=0;outfit.visible=false;bs.pause();$('bon').classList.add('hidden');if(was){music.play().catch(()=>{});setTimeout(()=>{if(music.paused&&bonusT<=0)music.play().catch(()=>{})},300)}}
+function startBonus(){if(sleepT>0)return;bonusT=26;outfit.visible=true;outfit.scale.set(.1,.1,.1);$('bon').classList.remove('hidden');if(playSong('police',()=>{if(bonusT>0)stopBonus()}))music.pause();else{bs.muted=false;bs.currentTime=0;const pp=bs.play();if(pp&&pp.then)pp.then(()=>music.pause()).catch(()=>{});else music.pause()}toast('👮 ×2 МОНЕТЫ!');chirp(2,.15)}
+function stopBonus(){const was=bonusT>0||outfit.visible;bonusT=0;outfit.visible=false;stopSong('police');bs.pause();$('bon').classList.add('hidden');if(was){music.play().catch(()=>{});setTimeout(()=>{if(music.paused&&bonusT<=0)music.play().catch(()=>{})},300)}}
 let AC=null;function chirp(n=2,vol=.12){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state=='suspended')AC.resume();for(let i=0;i<n;i++){const t=AC.currentTime+i*.13,o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.setValueAtTime(2300+Math.random()*300,t);o.frequency.exponentialRampToValueAtTime(3400,t+.07);o.frequency.exponentialRampToValueAtTime(2400,t+.1);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.001,t+.11);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+.12)}}catch(e){}}
 let chirpT=4;
-function unlockBs(){chirp(0);try{ss.muted=true;const q=ss.play();if(q&&q.then)q.then(()=>{ss.pause();ss.currentTime=0;ss.muted=false}).catch(()=>{ss.muted=false})}catch(e){}try{bs.muted=true;const p=bs.play();const done=()=>{bs.pause();bs.currentTime=0;bs.muted=false};if(p&&p.then)p.then(done).catch(()=>{bs.muted=false});else done()}catch(e){}}
-['pointerdown','touchstart','touchend','click','keydown'].forEach(ev=>addEventListener(ev,()=>{if(bonusT>0&&bs.paused){bs.muted=false;bs.play().catch(()=>{})}if(sleepT>0&&ss.paused){ss.muted=false;ss.play().catch(()=>{})}if(bonusT<=0&&sleepT<=0&&music.paused&&st!='menu')music.play().catch(()=>{})},{passive:true}));
+const cur={},SB={};
+async function loadSong(n,url){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const r=await fetch(url);SB[n]=await AC.decodeAudioData(await r.arrayBuffer())}catch(e){}}
+function playSong(n,cb){const b=SB[n];if(!b||!AC)return null;try{AC.resume()}catch(e){}const sr=AC.createBufferSource();sr.buffer=b;sr.connect(AC.destination);const o={sr,t0:AC.currentTime,dur:b.duration};sr.onended=()=>{if(cur[n]===o){cur[n]=null;cb()}};cur[n]=o;sr.start();return o}
+function stopSong(n){const o=cur[n];if(o){cur[n]=null;try{o.sr.onended=null;o.sr.stop()}catch(e){}}}
+function unlockBs(){chirp(0);if(!SB.sleep)loadSong('sleep','sleep_song.mp3');if(!SB.police)loadSong('police','police_song.mp3')}
+['pointerdown','touchstart','touchend','click','keydown'].forEach(ev=>addEventListener(ev,()=>{if(bonusT>0&&!cur.police&&bs.paused){bs.muted=false;bs.play().catch(()=>{})}if(sleepT>0&&!cur.sleep&&ss.paused){ss.muted=false;ss.play().catch(()=>{})}if(bonusT<=0&&sleepT<=0&&music.paused&&st!='menu')music.play().catch(()=>{})},{passive:true}));
 bs.addEventListener('ended',()=>{if(bonusT>0)stopBonus()});
-function startSleep(){if(bonusT>0||sleepT>0)return;sleepT=26;$('sl').classList.remove('hidden');ss.muted=false;ss.currentTime=0;const pp=ss.play();if(pp&&pp.then)pp.then(()=>music.pause()).catch(()=>{});else music.pause();toast('🍼 Баю-бай...')}
-function stopSleep(){const was=sleepT>0;sleepT=0;ss.pause();$('sl').classList.add('hidden');if(was){music.play().catch(()=>{});setTimeout(()=>{if(music.paused&&sleepT<=0&&bonusT<=0)music.play().catch(()=>{})},300);chirp(2,.12)}}
+function startSleep(){if(bonusT>0||sleepT>0)return;sleepT=26;$('sl').classList.remove('hidden');if(playSong('sleep',()=>{if(sleepT>0)stopSleep()}))music.pause();else{ss.muted=false;ss.currentTime=0;const pp=ss.play();if(pp&&pp.then)pp.then(()=>music.pause()).catch(()=>{});else music.pause()}toast('🍼 Баю-бай...')}
+function stopSleep(){const was=sleepT>0;sleepT=0;stopSong('sleep');ss.pause();$('sl').classList.add('hidden');if(was){music.play().catch(()=>{});setTimeout(()=>{if(music.paused&&sleepT<=0&&bonusT<=0)music.play().catch(()=>{})},300);chirp(2,.12)}}
 ss.addEventListener('ended',()=>{if(sleepT>0)stopSleep()});
 function die(){stopBonus();stopSleep();st='dead';deadT=0;const sc=Math.floor(score);if(sc>best){best=sc;try{localStorage.cyp=best}catch(e){}}
  $('fs').textContent=sc;$('fc').textContent=coins;$('best').textContent=best;setTimeout(()=>{$('over').classList.remove('hidden');$('hud').classList.add('hidden')},700)}
@@ -224,8 +228,8 @@ function loop(now){requestAnimationFrame(loop);const rdt=Math.min((now-last)/100
     if(hit){die()}}
    if(o.z>10){scene.remove(o.g);items.splice(i,1)}}
   chirpT-=dt;if(chirpT<=0){chirpT=6+Math.random()*6;if(sleepT<=0)chirp(2,.1)}
-  if(sleepT>0){if(!ss.paused&&isFinite(ss.duration))sleepT=Math.max(.05,ss.duration-ss.currentTime);else sleepT-=rdt;$('slt').textContent=Math.max(0,Math.ceil(sleepT));if(sleepT<=0)stopSleep()}
-  if(bonusT>0){if(!bs.paused&&isFinite(bs.duration))bonusT=Math.max(.05,bs.duration-bs.currentTime);else bonusT-=dt;$('bt').textContent=Math.max(0,Math.ceil(bonusT));if(bonusT<=0)stopBonus()}
+  if(sleepT>0){if(cur.sleep)sleepT=Math.max(.05,cur.sleep.dur-(AC.currentTime-cur.sleep.t0));else if(!ss.paused&&isFinite(ss.duration))sleepT=Math.max(.05,ss.duration-ss.currentTime);else sleepT-=rdt;$('slt').textContent=Math.max(0,Math.ceil(sleepT));if(sleepT<=0)stopSleep()}
+  if(bonusT>0){if(cur.police)bonusT=Math.max(.05,cur.police.dur-(AC.currentTime-cur.police.t0));else if(!bs.paused&&isFinite(bs.duration))bonusT=Math.max(.05,bs.duration-bs.currentTime);else bonusT-=dt;$('bt').textContent=Math.max(0,Math.ceil(bonusT));if(bonusT<=0)stopBonus()}
   $('dist').textContent=Math.floor(dist);$('coins').textContent=coins;$('score').textContent=Math.floor(score);
  }
  if(st=='dead'){deadT+=dt;body.rotation.x=Math.min(deadT*5,1.5);body.position.y=Math.max(0,.2-deadT*.3);wingL.rotation.z=wingR.rotation.z=-1.3;legs.forEach(l=>{l.rotation.x=.5;l.knee.rotation.x=0})}
