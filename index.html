@@ -162,8 +162,10 @@ function spawn(){const z=nextSpawn;if(bonusT<=0&&Math.random()<.12&&!items.some(
  nextSpawn-=16+Math.random()*10+speed*.35}
 const bs=$('bsong');let bonusT=0;
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1200)}
-function startBonus(){bonusT=24;outfit.visible=true;outfit.scale.set(.1,.1,.1);$('bon').classList.remove('hidden');music.pause();bs.currentTime=0;bs.play().catch(()=>{});toast('👮 ×2 МОНЕТЫ!')}
+function startBonus(){bonusT=24;outfit.visible=true;outfit.scale.set(.1,.1,.1);$('bon').classList.remove('hidden');bs.muted=false;bs.currentTime=0;const pp=bs.play();if(pp&&pp.then)pp.then(()=>music.pause()).catch(()=>{});else music.pause();toast('👮 ×2 МОНЕТЫ!')}
 function stopBonus(){if(bonusT>0)music.play().catch(()=>{});bonusT=0;outfit.visible=false;bs.pause();$('bon').classList.add('hidden')}
+function unlockBs(){try{bs.muted=true;const p=bs.play();const done=()=>{bs.pause();bs.currentTime=0;bs.muted=false};if(p&&p.then)p.then(done).catch(()=>{bs.muted=false});else done()}catch(e){}}
+['pointerdown','touchstart','touchend','click','keydown'].forEach(ev=>addEventListener(ev,()=>{if(bonusT>0&&bs.paused){bs.muted=false;bs.play().catch(()=>{})}},{passive:true}));
 bs.addEventListener('ended',()=>{if(bonusT>0)stopBonus()});
 function die(){stopBonus();st='dead';deadT=0;const sc=Math.floor(score);if(sc>best){best=sc;try{localStorage.cyp=best}catch(e){}}
  $('fs').textContent=sc;$('fc').textContent=coins;$('best').textContent=best;setTimeout(()=>{$('over').classList.remove('hidden');$('hud').classList.add('hidden')},700)}
@@ -172,7 +174,7 @@ function jump(){if(st=='run'&&py<.05){vy=11;sliding=false}}function slide(){if(s
 addEventListener('keydown',e=>{const k=e.key;if(k=='ArrowLeft'||k=='a')left();if(k=='ArrowRight'||k=='d')right();if(k=='ArrowUp'||k=='w'||k==' ')jump();if(k=='ArrowDown'||k=='s')slide()});
 let tx,ty;addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
 addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.max(Math.abs(dx),Math.abs(dy))<24)jump();else if(Math.abs(dx)>Math.abs(dy))dx<0?left():right();else dy<0?jump():slide();tx=null},{passive:true});
-function begin(){reset();st='intro';introT=0;$('menu').classList.add('hidden');$('over').classList.add('hidden');$('hud').classList.add('hidden');const m=$('music');if(typeof stopBonus=='function')stopBonus();m.currentTime=0;m.play().catch(()=>{})}
+function begin(){reset();st='intro';introT=0;$('menu').classList.add('hidden');$('over').classList.add('hidden');$('hud').classList.add('hidden');unlockBs();const m=$('music');if(typeof stopBonus=='function')stopBonus();m.currentTime=0;m.play().catch(()=>{})}
 $('start').onclick=begin;$('again').onclick=begin;
 reset();
 
