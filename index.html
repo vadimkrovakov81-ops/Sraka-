@@ -21,6 +21,7 @@ button:active{transform:translateY(4px);box-shadow:0 3px 0 #9c641b}
 .pop{position:fixed;left:50%;top:58%;font:900 26px Arial;color:#fff;text-shadow:0 2px 6px #000a;pointer-events:none;z-index:6;animation:popUp .85s ease-out forwards}
 @keyframes popUp{from{opacity:1;transform:translate(-50%,0) scale(.8)}20%{transform:translate(-50%,-14px) scale(1.15)}to{opacity:0;transform:translate(-50%,-90px) scale(1)}}
 #flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9}#flash.go{animation:fl .45s}@keyframes fl{0%{opacity:.8}100%{opacity:0}}
+.wxb{bottom:calc(72px + env(safe-area-inset-bottom))!important}
 .snd{position:fixed;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));width:48px;height:48px;border-radius:50%;padding:0;font-size:22px;z-index:20;pointer-events:auto;background:#0a2a4acc;color:#fff;box-shadow:none;border:2px solid #fff5}
 .row{display:flex;justify-content:space-between;padding:5px 4px;font-size:17px;border-bottom:1px solid #fff2}.rec{margin:12px 0;font-size:24px;font-weight:900;color:#ffd54f;animation:bob .5s infinite alternate}.ms2{margin:10px 0 14px;font-size:13px;text-align:left;opacity:.95}
 #skl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.sk{display:flex;flex-direction:column;gap:3px;font-size:13px;padding:10px 6px;color:#fff;background:#ffffff1c;box-shadow:none;border:2px solid #fff3;border-radius:16px}.sk .e{font-size:30px}.sk.sel{border-color:#ffd54f;background:#ffd54f33}.sk b{color:#ffd54f}
@@ -32,7 +33,7 @@ button:active{transform:translateY(4px);box-shadow:0 3px 0 #9c641b}
 .center{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
 </style></head><body><canvas id="c"></canvas>
 <div id="ui"><div id="hud" class="hud hidden"><div class="pill">🏃 <span id="dist">0</span> м</div><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">⭐ <span id="score">0</span></div></div>
-<div id="bon" class="hidden">👮 ×2 монет · <span id="bt">0</span> с</div><div id="pu"></div><div id="ms"></div><div id="flash"></div><div id="fx"></div><button id="snd" class="snd">🔊</button>
+<div id="bon" class="hidden">👮 ×2 монет · <span id="bt">0</span> с</div><div id="pu"></div><div id="ms"></div><div id="flash"></div><div id="fx"></div><button id="wx" class="snd wxb">🌦️</button><button id="snd" class="snd">🔊</button>
 <div id="shop" class="center hidden"><div class="panel"><div class="logo" style="font-size:30px">🛍 МАГАЗИН</div><div class="sub" style="margin:0">🪙 <b id="wal2">0</b></div><div id="skl"></div><button id="shopback">← НАЗАД</button></div></div>
 <div id="sl" class="hidden">🍼 Баю-бай · <span id="slt">0</span> с</div><div id="toast"></div>
 <div id="menu" class="center"><div class="panel"><img class="ava" src="doch.jpg" alt=""><div class="logo">🐥 ЦЫП-ЦЫП</div><div class="sub">Игра для ДОЧИ ♥<br>Беги, прыгай, собирай монеты!</div><div class="sub" style="margin:-8px 0 14px">🏆 РЕКОРД: <b id="mbest">0</b> &nbsp;•&nbsp; 🪙 <b id="wal">0</b></div><button id="start">▶ ИГРАТЬ</button><button id="shopb" class="b2">🛍 МАГАЗИН</button>
@@ -43,7 +44,7 @@ button:active{transform:translateY(4px);box-shadow:0 3px 0 #9c641b}
 <script>
 'use strict';
 const $=id=>document.getElementById(id),T=THREE;
-const renderer=new T.WebGLRenderer({canvas:$('c'),antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+const renderer=new T.WebGLRenderer({canvas:$('c'),antialias:true});let PR=Math.min(devicePixelRatio,2.5),PRmax=PR;renderer.setPixelRatio(PR);renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
 const scene=new T.Scene();scene.background=new T.Color(0x8fd3ff);scene.fog=new T.Fog(0xcfe9ff,58,172);
 const cam=new T.PerspectiveCamera(60,1,.5,300);
 const hemi=new T.HemisphereLight(0xeaf6ff,0xd9c9a0,.9);scene.add(hemi);
@@ -59,7 +60,7 @@ function createChick(T){
  let seed=11;const R=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
  const STOPS=['#d96a12','#ec8816','#f6a323','#fdc04a'];function colAt(y){const f=Math.max(0,Math.min(2.999,y/512*3)),i=f|0,a=new T.Color(STOPS[i]).lerp(new T.Color(STOPS[i+1]),f-i);return '#'+a.getHexString()}
  function canvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return[c,c.getContext('2d')]}
- function tex(c,rx,ry){const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rx||1,ry||1);t.anisotropy=4;return t}
+ function tex(c,rx,ry){const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rx||1,ry||1);t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return t}
  // --- мех: градиент (тёмнее сверху, светлее к животу) + шёрстка
  const[fc,fx]=canvas(512,512);{const g=fx.createLinearGradient(0,0,0,512);STOPS.forEach((c,i)=>g.addColorStop(i/3,c));fx.fillStyle=g;fx.fillRect(0,0,512,512);
   for(let i=0;i<6000;i++){const x=R()*512,y=R()*512,a=Math.PI/2+(R()-.5)*.7,l=7+R()*11;fx.strokeStyle=R()<.5?'rgba(255,222,130,.32)':'rgba(205,98,14,.28)';fx.lineWidth=1.1;fx.beginPath();fx.moveTo(x,y);fx.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);fx.stroke()}}
@@ -139,7 +140,7 @@ model.traverse(m=>{if(m.material&&m.material.emissive&&[0x1c0c00,0x2a1200,0x2a0e
 scene.add(chick);
 
 // ---------- МИР ----------
-function mkTex(w,h,fn,rx,ry){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');fn(x,w,h);const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rx,ry);t.anisotropy=4;return t}
+function mkTex(w,h,fn,rx,ry){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');fn(x,w,h);const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rx,ry);t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return t}
 const grassTex=mkTex(256,256,(x,w,h)=>{x.fillStyle='#fff';x.fillRect(0,0,w,h);for(let i=0;i<900;i++){x.fillStyle=Math.random()<.5?'rgba(0,60,0,.09)':'rgba(255,255,220,.16)';const r=2+Math.random()*7;x.beginPath();x.ellipse(Math.random()*w,Math.random()*h,r,r*.6,Math.random()*3,0,6.3);x.fill()}for(let i=0;i<1400;i++){x.strokeStyle='rgba(0,70,0,.1)';x.lineWidth=1;const px=Math.random()*w,py=Math.random()*h;x.beginPath();x.moveTo(px,py);x.lineTo(px+(Math.random()-.5)*3,py-4-Math.random()*5);x.stroke()}},40,60);
 const scrollers=[];const ground=new T.Mesh(new T.PlaneGeometry(300,400),new T.MeshLambertMaterial({color:0x7cc94f,map:grassTex}));ground.rotation.x=-Math.PI/2;ground.position.set(0,-.02,-100);scene.add(ground);ground.receiveShadow=true;scrollers.push({m:ground,len:400/60,z0:-100,o:0});
 const LANES=[-2.4,0,2.4],ROADW=8;
@@ -303,7 +304,7 @@ function cones(){const g=new T.Group(),B=Acc();[-.8,0,.8].forEach(x=>{put(B,UB,0
 function barrier(){const g=new T.Group(),B=Acc(),Lt=Acc();for(let i=0;i<5;i++)put(B,UB,i%2?0xffffff:0xe53935,(i-2)*.46,.45,0,.46,.62,.5);put(B,UB,0x555555,-1.0,.12,0,.16,.24,.6);put(B,UB,0x555555,1.0,.12,0,.16,.24,.6);put(B,UB,0x333333,0,.82,0,2.3,.08,.54);
  put(Lt,UB,0xffa000,-.95,.98,0,.2,.2,.2);put(Lt,UB,0xffa000,.95,.98,0,.2,.2,.2);g.add(accMesh(B,vcMat),accMesh(Lt,OG().light),shBlob(2.8,1.4));return g}
 function bar(){const g=new T.Group(),B=Acc(),Lt=Acc();[-1.15,1.15].forEach(x=>{put(B,UB,0x555a62,x,1.1,0,.22,2.2,.22);put(B,UB,0x3a3d44,x,.1,0,.6,.2,.6)});for(let i=0;i<8;i++)put(B,UB,i%2?0xffffff:0xe53935,(i-3.5)*.3,1.9,0,.3,.34,.22);put(B,UB,0x222222,0,2.15,0,2.5,.05,.28);
- [-1.15,1.15].forEach(x=>put(Lt,UB,0xff1744,x,2.35,0,.24,.24,.24));put(B,UB,0xfdd835,0,1.1,.16,.6,.6,.05);g.add(accMesh(B,vcMat),accMesh(Lt,OG().light),shBlob(2.8,1.2));return g}
+ [-1.15,1.15].forEach(x=>put(Lt,UB,0xff1744,x,2.35,0,.24,.24,.24));g.add(accMesh(B,vcMat),accMesh(Lt,OG().light),shBlob(2.8,1.2));return g}
 function pit(){const g=new T.Group(),B=Acc();put(B,UB,0x0b0b0b,0,.06,0,2.2,.04,3);for(let i=0;i<6;i++){put(B,UB,i%2?0x222222:0xfdd835,-1.1+i*.44,.1,1.6,.44,.1,.16);put(B,UB,i%2?0x222222:0xfdd835,-1.1+i*.44,.1,-1.6,.44,.1,.16)}put(B,UB,0xfdd835,-1.2,.1,0,.18,.1,3.2);put(B,UB,0xfdd835,1.2,.1,0,.18,.1,3.2);
  [-1,1].forEach(s=>{const c=new T.Mesh(OG().cone,vcMat);c.position.set(s*1.4,.06,1.7);c.scale.set(.7,.7,.7);g.add(c)});g.add(accMesh(B,vcMat));return g}
 function roadblock(){const g=new T.Group(),B=Acc(),Lt=Acc();put(B,UB,0xcfd8dc,0,.3,0,2.2,.6,.7);put(B,UB,0xcfd8dc,0,.7,0,1.7,.3,.5);for(let i=0;i<4;i++)put(B,UB,0xe53935,-.8+i*.53,.5,.36,.26,.6,.04);put(B,UB,0xfdd835,0,1.0,0,.5,.45,.05);put(Lt,UB,0xffa000,0,.95,.3,.18,.18,.18);g.add(accMesh(B,vcMat),accMesh(Lt,OG().light),shBlob(2.6,1.3));return g}
@@ -330,8 +331,8 @@ const moon=new T.Mesh(new T.SphereGeometry(7,20,16),new T.MeshBasicMaterial({col
 const starsG=new T.BufferGeometry(),sp=[];for(let i=0;i<260;i++)sp.push((Math.random()-.5)*320,20+Math.random()*110,-170-Math.random()*30);starsG.setAttribute('position',new T.Float32BufferAttribute(sp,3));
 const stars=new T.Points(starsG,new T.PointsMaterial({color:0xffffff,size:2.2,sizeAttenuation:false,fog:false,transparent:true,opacity:0}));scene.add(stars);
 const skyNightC=new T.Color(.07,.09,.24);
-function applyNight(k){skyMat.color.set(0xffffff).lerp(skyNightC,k*.92);haze.material.opacity=1-k*.75;winMat.color.copy(winDay).lerp(winNight,k);sky.material.color.set(0xffffff).lerp(skyNightC,k);hillMats.forEach(m=>m.color.copy(m.userData.base).lerp(skyNightC,k*.9));sunGlow.material.opacity=1-k;scene.background.copy(dayBg).lerp(nightBg,k);scene.fog.color.copy(dayFog).lerp(nightFog,k);hemi.intensity=.9-.52*k;sun.intensity=.9-.7*k;ground.material.color.copy(gDay).lerp(gNight,k);
- sunM.material.opacity=1-k;moon.material.opacity=k;stars.material.opacity=k;cloudMats.forEach(m=>m.color.copy(cDay).lerp(cNight,k));birds.forEach(b=>b.visible=k<.3)}
+function applyNight(k){skyMat.color.set(0xffffff).lerp(ovSky,ov*(1-k)*.5).lerp(skyNightC,k*.92).lerp(ovFog,fogK*(1-k)*.7);haze.material.opacity=1-k*.75;winMat.color.copy(winDay).lerp(winNight,k);sky.material.color.set(0xffffff).lerp(ovSky,ov*(1-k)).lerp(skyNightC,k);hillMats.forEach(m=>m.color.copy(m.userData.base).lerp(ovFog,fogK*(1-k)).lerp(skyNightC,k*.9));sunGlow.material.opacity=(1-k)*(1-ov);scene.background.copy(dayBg).lerp(nightBg,k);scene.fog.color.copy(dayFog).lerp(ovFog,ov*(1-k)).lerp(nightFog,k);scene.fog.near=58-44*fogK;scene.fog.far=172-92*fogK;hemi.intensity=(.9-.52*k)*(1-.2*ov);sun.intensity=(.9-.7*k)*(1-.55*ov);ground.material.color.copy(gDay).lerp(gNight,k);
+ sunM.material.opacity=(1-k)*(1-ov);moon.material.opacity=k;stars.material.opacity=k;cloudMats.forEach(m=>m.color.copy(cDay).lerp(cRain,ov*(1-k)*.75).lerp(cNight,k));birds.forEach(b=>b.visible=k<.3)}
 const zs=[0,1,2].map(i=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.font='bold 54px Arial';x.fillStyle='#fff';x.strokeStyle='#5b6bd6';x.lineWidth=5;x.textAlign='center';x.textBaseline='middle';x.strokeText('Z',32,34);x.fillText('Z',32,34);
  const sp=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(c),transparent:true,depthTest:false}));sp.visible=false;scene.add(sp);return sp});
 let nightK=0,lastNK=-1,ts=1,sleepT=0;
@@ -378,6 +379,7 @@ function sfx(n){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)(
  if(n=='coin'){tone(988,.08,'square',.05,0);tone(1319,.14,'square',.05,.07)}
  else if(n=='pu'){[523,659,784,1047].forEach((f,i)=>tone(f,.16,'triangle',.12,i*.07))}
  else if(n=='rec'){[523,659,784,1047,1319].forEach((f,i)=>tone(f,.22,'triangle',.14,i*.1))}
+ else if(n=='thunder'){const nn=AC.sampleRate*1.6|0,b=AC.createBuffer(1,nn,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<nn;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/nn,2.2)*(1+Math.sin(i/2200)*.5);const s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();f.type='lowpass';f.frequency.value=380;gn.gain.value=.9;s.buffer=b;s.connect(f);f.connect(gn);gn.connect(o);s.start(t)}
  else if(n=='whoosh'||n=='swoosh'){const b=AC.createBuffer(1,AC.sampleRate*.45|0,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.sin(i/d.length*Math.PI);const s=AC.createBufferSource(),f=AC.createBiquadFilter(),gn=AC.createGain();f.type='bandpass';f.frequency.setValueAtTime(500,t);f.frequency.exponentialRampToValueAtTime(2600,t+.4);gn.gain.value=n=='whoosh'?.22:.06;s.buffer=b;s.connect(f);f.connect(gn);gn.connect(o);s.start(t)}
  else if(n=='crash'){tone(180,.4,'sawtooth',.18,0,40);const b=AC.createBuffer(1,AC.sampleRate*.3|0,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);const s=AC.createBufferSource(),g=AC.createGain();s.buffer=b;g.gain.value=.25;s.connect(g);g.connect(o);s.start(t)}}catch(e){}}
 function setMute(m){muted=m;if(mg)mg.gain.value=m?0:1;music.muted=m;bs.muted=m;ss.muted=m;$('snd').textContent=m?'🔇':'🔊'}
@@ -394,6 +396,37 @@ const dustG=new T.SphereGeometry(1,6,5),dust=[];for(let i=0;i<36;i++){const m=ne
 let didx=0;function puff(x,y,z,c,s,L,vx,vy){const d=dust[didx++%36];d.m.position.set(x,y,z);d.m.material.color.setHex(c);d.l=d.L=L;d.s=s;d.vx=vx||0;d.vy=vy||0;d.m.scale.setScalar(s);d.m.visible=true}
 function dustBurst(x){for(let i=0;i<9;i++)puff(x+(Math.random()-.5)*.6,.1,.1+(Math.random()-.5)*.4,0xe8dcc0,.18,.55,(Math.random()-.5)*2.4,.5+Math.random()*.8)}
 function pop(txt,col){const n=performance.now();if(n-popT<110)return;popT=n;const e=document.createElement('div');e.className='pop';e.textContent=txt;e.style.color=col||'#fff';e.style.marginLeft=((Math.random()-.5)*90|0)+'px';document.body.appendChild(e);setTimeout(()=>e.remove(),900)}
+// ---------- ПОГОДА И КАЧЕСТВО ----------
+let wMode=0,wType='clear',nextW=350,wRain=0,wSnow=0,wFog=0,ov=0,fogK=0,lastOv=-1,lastFg=-1,lightT=8,mvLast=0,ambG=null;
+const WNAME={clear:'☀️ Ясно',rain:'🌧️ Дождь',snow:'❄️ Снег',fog:'🌫️ Туман'},ovSky=new T.Color(.62,.68,.78),ovFog=new T.Color(0xc9d3df),snowG=new T.Color(0xeef4f8),cRain=new T.Color(.52,.58,.68),wetC=new T.Color(.55,.6,.72),_wc=new T.Color();
+const RN=450,rainPos=new Float32Array(RN*6),rainV=new Float32Array(RN);
+for(let i=0;i<RN;i++){rainPos[i*6]=(Math.random()-.5)*32;rainPos[i*6+1]=Math.random()*15;rainPos[i*6+2]=-70+Math.random()*78;rainV[i]=24+Math.random()*10}
+const rainG=new T.BufferGeometry();rainG.setAttribute('position',new T.BufferAttribute(rainPos,3));
+const rainM=new T.LineBasicMaterial({color:0xd6e6ff,transparent:true,opacity:0,fog:false,depthWrite:false}),rainL=new T.LineSegments(rainG,rainM);rainL.frustumCulled=false;rainL.visible=false;scene.add(rainL);
+const SN=600,snowPos=new Float32Array(SN*3),snowPh=new Float32Array(SN);
+for(let i=0;i<SN;i++){snowPos[i*3]=(Math.random()-.5)*30;snowPos[i*3+1]=Math.random()*14;snowPos[i*3+2]=-60+Math.random()*68;snowPh[i]=Math.random()*6}
+const snowGeo=new T.BufferGeometry();snowGeo.setAttribute('position',new T.BufferAttribute(snowPos,3));
+const snowM=new T.PointsMaterial({color:0xffffff,size:.17,transparent:true,opacity:0,fog:false,depthWrite:false}),snowP=new T.Points(snowGeo,snowM);snowP.frustumCulled=false;snowP.visible=false;scene.add(snowP);
+const puddleM=new T.MeshBasicMaterial({color:0xa9c8e8,transparent:true,opacity:0,depthWrite:false});
+for(let i=0;i<7;i++){const m=new T.Mesh(new T.PlaneGeometry(1,1),puddleM);m.rotation.x=-Math.PI/2;m.scale.set(1.3+Math.random()*1.1,2+Math.random()*1.6,1);m.position.set((Math.random()<.5?-1:1)*(.6+Math.random()*2.6),.04,-20-i*42-Math.random()*20);scene.add(m);roadDeco.push(m)}
+function setWType(t,quiet){if(t==wType)return;wType=t;if(!quiet)toast(WNAME[t])}
+function cycleWeather(){wMode=(wMode+1)%5;const m=['auto','clear','rain','snow','fog'][wMode];$('wx').textContent=['🌦️','☀️','🌧️','❄️','🌫️'][wMode];if(wMode>0)setWType(m,true);else nextW=dist+300;toast(wMode?'Погода: '+WNAME[m]:'Погода: авто')}
+function ambUpdate(rv){if(!AC||AC.state!='running')return;if(!ambG&&rv>.02){const n=AC.sampleRate*2|0,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;const s=AC.createBufferSource();s.buffer=b;s.loop=true;const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=3200;ambG=AC.createGain();ambG.gain.value=0;s.connect(f);f.connect(ambG);ambG.connect(MG());s.start()}if(ambG)ambG.gain.value=Math.min(.07,rv*.07)}
+function updateWeather(rdt,now){
+ if(wMode==0&&st=='run'&&dist>nextW){const o=['clear','rain','snow','fog','clear','rain'].filter(x=>x!=wType);setWType(o[Math.random()*o.length|0]);nextW=dist+650+Math.random()*500}
+ const k=Math.min(1,rdt*.5);wRain+=((wType=='rain'?1:0)-wRain)*k;wSnow+=((wType=='snow'?1:0)-wSnow)*k;wFog+=((wType=='fog'?1:0)-wFog)*k;
+ ov=Math.max(wRain*.9,wSnow*.7,wFog*.6);fogK=Math.max(wRain*.3,wSnow*.4,wFog);
+ if(Math.abs(ov-lastOv)>.003||Math.abs(fogK-lastFg)>.003){lastOv=ov;lastFg=fogK;lastNK=-1}
+ rainL.visible=wRain>.02;if(rainL.visible){rainM.opacity=.5*wRain;const p=rainPos;for(let i=0;i<RN;i++){const o=i*6;p[o+1]-=rainV[i]*rdt;p[o+2]+=mvLast;p[o]-=.9*rdt;if(p[o+1]<0||p[o+2]>9){p[o]=(Math.random()-.5)*32;p[o+1]=13+Math.random()*3;p[o+2]=-70+Math.random()*30}
+  p[o+3]=p[o]+.07;p[o+4]=p[o+1]+.55+rainV[i]*.02;p[o+5]=p[o+2]-.2}rainG.attributes.position.needsUpdate=true}
+ snowP.visible=wSnow>.02;if(snowP.visible){snowM.opacity=.9*wSnow;const p=snowPos;for(let i=0;i<SN;i++){const o=i*3;p[o+1]-=(1.5+snowPh[i]*.15)*rdt;p[o+2]+=mvLast;p[o]+=Math.sin(now/700+snowPh[i])*.5*rdt;if(p[o+1]<0||p[o+2]>9){p[o]=(Math.random()-.5)*30;p[o+1]=12+Math.random()*3;p[o+2]=-60+Math.random()*25}}snowGeo.attributes.position.needsUpdate=true}
+ puddleM.opacity=.55*wRain;road.material.color.copy(_wc.set(0xffffff).lerp(wetC,wRain*.75));road.material.emissive.setRGB(.34*wSnow,.37*wSnow,.41*wSnow);
+ if(wRain>.7){lightT-=rdt;if(lightT<=0){lightT=7+Math.random()*9;const fl=$('flash');fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go');setTimeout(()=>sfx('thunder'),350+Math.random()*500)}}
+ ambUpdate(wRain)}
+let qAcc=0,qN=0,qLow=0,qHold=0,qUp=false;
+function qualityTick(rdt){if(st!='run')return;qAcc+=rdt;qN++;if(qHold>0)qHold--;if(qN<75)return;const avg=qAcc/qN;qAcc=0;qN=0;
+ if(avg>.025){if(PR>1.01){PR=Math.max(1,PR-.5);renderer.setPixelRatio(PR);renderer.setSize(innerWidth,innerHeight);qHold=300;if(qUp){PRmax=PR;qUp=false}}else if(++qLow>=2&&sun.castShadow){sun.castShadow=false;renderer.shadowMap.enabled=false;scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true)})}}
+ else if(avg<.0185&&PR<PRmax-.01&&qHold<=0){PR=Math.min(PRmax,PR+.25);renderer.setPixelRatio(PR);renderer.setSize(innerWidth,innerHeight);qHold=600;qUp=true}}
 // ---------- ИГРА ----------
 let music=$('music'),introT=0,camZ=4.6,turnY=0,prevAir=false,landT=0,st='menu',speed,dist,coins,score,lane,px,py,vy,sliding,slideT,nextSpawn,runT,best=0,deadT;
 try{best=+localStorage.cyp||0}catch(e){}
@@ -449,20 +482,20 @@ function jump(){if(st=='run'&&py<.05){vy=P.jump>0?15.5:11;sliding=false;chirp(1,
 addEventListener('keydown',e=>{const k=e.key;if(k=='ArrowLeft'||k=='a')left();if(k=='ArrowRight'||k=='d')right();if(k=='ArrowUp'||k=='w'||k==' ')jump();if(k=='ArrowDown'||k=='s')slide()});
 let tx,ty;addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
 addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.max(Math.abs(dx),Math.abs(dy))<24)jump();else if(Math.abs(dx)>Math.abs(dy))dx<0?left():right();else dy<0?jump():slide();tx=null},{passive:true});
-function begin(){reset();st='intro';introT=0;$('menu').classList.add('hidden');$('over').classList.add('hidden');$('hud').classList.add('hidden');unlockBs();const m=$('music');if(typeof stopBonus=='function'){stopBonus();stopSleep()}if(cueN)endCue();m.currentTime=0;m.play().catch(()=>{})}
+function begin(){reset();if(wMode==0){setWType('clear',true);nextW=350}st='intro';introT=0;$('menu').classList.add('hidden');$('over').classList.add('hidden');$('hud').classList.add('hidden');unlockBs();const m=$('music');if(typeof stopBonus=='function'){stopBonus();stopSleep()}if(cueN)endCue();m.currentTime=0;m.play().catch(()=>{})}
 let glk=0;function bindBtn(id,fn){const b=$(id);const go=e=>{if(e){e.stopPropagation();if(e.cancelable)e.preventDefault()}const n=performance.now();if(n-glk<450)return;glk=n;fn()};b.addEventListener('pointerup',go);b.addEventListener('touchend',go,{passive:false});b.addEventListener('click',go)}
 const startGame=()=>{if(st=='menu'||st=='dead')begin()};
 bindBtn('start',startGame);bindBtn('again',startGame);
 bindBtn('shopb',()=>{renderShop();$('menu').classList.add('hidden');$('shop').classList.remove('hidden')});
 function goMenu(){reset();st='menu';['over','shop','hud'].forEach(i=>$(i).classList.add('hidden'));$('menu').classList.remove('hidden');updateMenu()}
 bindBtn('shopback',goMenu);bindBtn('tomenu',goMenu);bindBtn('shop2',()=>{renderShop();$('over').classList.add('hidden');$('shop').classList.remove('hidden')});
-bindBtn('snd',()=>setMute(!muted));
+bindBtn('snd',()=>setMute(!muted));bindBtn('wx',cycleWeather);
 $('skl').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-id]');if(b)shopClick(b.dataset.id)});
 updateMenu();
 reset();
 
 let last=performance.now();
-function loop(now){requestAnimationFrame(loop);const rdt=Math.min((now-last)/1000,.05);ts+=((sleepT>0?.38:1)-ts)*Math.min(1,rdt*3);const dt=rdt*ts;last=now;mvNow=0;nightK+=((sleepT>0?1:0)-nightK)*Math.min(1,rdt*1.4);if(Math.abs(nightK-lastNK)>.003){lastNK=nightK;applyNight(nightK)}
+function loop(now){requestAnimationFrame(loop);const rdt=Math.min((now-last)/1000,.05);ts+=((sleepT>0?.38:1)-ts)*Math.min(1,rdt*3);const dt=rdt*ts;last=now;mvNow=0;if(st!='run')mvLast=0;qualityTick(rdt);nightK+=((sleepT>0?1:0)-nightK)*Math.min(1,rdt*1.4);updateWeather(rdt,now);if(Math.abs(nightK-lastNK)>.003){lastNK=nightK;applyNight(nightK)}
  birds.forEach(b=>{const w=Math.sin(now/110+b.userData.o)*.6;b.userData.a.rotation.z=w;b.userData.b.rotation.z=-w});
  clouds.forEach(c=>{c.position.x+=rdt*c.userData.sp;if(c.position.x>230)c.position.x=-230});
  if(st=='intro'){introT+=dt;if(introT>1.7){st='run';$('hud').classList.remove('hidden')}}
@@ -473,7 +506,7 @@ function loop(now){requestAnimationFrame(loop);const rdt=Math.min((now-last)/100
   if(sliding){slideT-=dt;if(slideT<=0)sliding=false}
   const ph=sliding&&py<.05?.6:1.4;
   // движение мира
-  const mv=speed*dt;mvNow=mv;
+  const mv=speed*dt;mvNow=mv;mvLast=mv;
   scrollers.forEach(s=>{s.o=(s.o+mv)%s.len;s.m.position.z=s.z0+s.o});
   {const lv=Math.max(0,(speed-18)/16),op=Math.min(.55,lv*.5+(P.boost>0?.35:0));slM.opacity=op;const on=op>.03;SL.forEach(m=>{m.visible=on;m.position.z+=mv*m.userData.sp;m.scale.z=3+speed*.3;if(m.position.z>8)slReset(m,1)})}
   dustT-=dt;if(dustT<=0&&py<.05){if(sliding){dustT=.04;puff(px+(Math.random()-.5)*.4,.15,.3,0xffb74d,.1,.35,(Math.random()-.5)*1.2,.6)}else{dustT=.09;puff(px+(Math.random()<.5?-.2:.2),.08,.25,0xe8dcc0,.13,.5,(Math.random()-.5)*.8,.25)}}
@@ -529,7 +562,7 @@ function loop(now){requestAnimationFrame(loop);const rdt=Math.min((now-last)/100
  parts.forEach(p=>{if(p.l>0){p.l-=rdt;p.v.y-=9*rdt;p.m.position.addScaledVector(p.v,rdt);p.m.material.opacity=Math.max(0,p.l*2);if(p.l<=0)p.m.visible=false}});
  const sh=(shake>0?(Math.random()-.5)*shake*.8:0)+(P.boost>0&&st=='run'?(Math.random()-.5)*.05:0);shake=Math.max(0,shake-rdt);
  const tf=P.boost>0?78:60+Math.min(7,Math.max(0,(speed-14)*.35));if(Math.abs(cam.fov-tf)>.1){cam.fov+=(tf-cam.fov)*Math.min(1,rdt*5);cam.updateProjectionMatrix()}
- gDay.lerp(new T.Color(ZN[zone].c),Math.min(1,rdt*.6));ground.material.color.copy(gDay).lerp(gNight,nightK);
+ gDay.lerp(new T.Color(ZN[zone].c),Math.min(1,rdt*.6));ground.material.color.copy(gDay).lerp(snowG,wSnow*.9).lerp(gNight,nightK);
  ACC.butterfly.children.forEach((c,i)=>{if(i<4)c.scale.x=1+Math.sin(now/90)*.35});
  dust.forEach(d=>{if(d.l>0){d.l-=rdt;d.m.position.z+=mvNow;d.m.position.x+=d.vx*rdt;d.m.position.y+=d.vy*rdt;const k=1-Math.max(0,d.l)/d.L;d.m.scale.setScalar(d.s*(1+k*2.2));d.m.material.opacity=Math.max(0,(1-k))*.55;if(d.l<=0)d.m.visible=false}});
  $('fx').classList.toggle('on',P.boost>0&&st=='run');coinM.emissiveIntensity=.85+.35*Math.sin(now/170);
