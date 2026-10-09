@@ -33,7 +33,7 @@ button:active{transform:translateY(4px);box-shadow:0 3px 0 #9c641b}
 .center{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
 </style></head><body><canvas id="c"></canvas>
 <div id="ui"><div id="hud" class="hud hidden"><div class="pill">🏃 <span id="dist">0</span> м</div><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">⭐ <span id="score">0</span></div></div>
-<div id="bon" class="hidden">👮 ×2 монет · <span id="bt">0</span> с</div><div id="pu"></div><div id="ms"></div><div id="flash"></div><div id="fx"></div><button id="wx" class="snd wxb">🌦️</button><button id="snd" class="snd">🔊</button>
+<div id="bon" class="hidden">👮 ×2 монет · <span id="bt">0</span> с</div><div id="pu"></div><div id="ms"></div><div id="flash"></div><div id="fx"></div><button id="snd" class="snd">🔊</button>
 <div id="shop" class="center hidden"><div class="panel"><div class="logo" style="font-size:30px">🛍 МАГАЗИН</div><div class="sub" style="margin:0">🪙 <b id="wal2">0</b></div><div id="skl"></div><button id="shopback">← НАЗАД</button></div></div>
 <div id="sl" class="hidden">🍼 Баю-бай · <span id="slt">0</span> с</div><div id="toast"></div>
 <div id="menu" class="center"><div class="panel"><img class="ava" src="doch.jpg" alt=""><div class="logo">🐥 ЦЫП-ЦЫП</div><div class="sub">Игра для ДОЧИ ♥<br>Беги, прыгай, собирай монеты!</div><div class="sub" style="margin:-8px 0 14px">🏆 РЕКОРД: <b id="mbest">0</b> &nbsp;•&nbsp; 🪙 <b id="wal">0</b></div><button id="start">▶ ИГРАТЬ</button><button id="shopb" class="b2">🛍 МАГАЗИН</button>
@@ -331,7 +331,7 @@ const moon=new T.Mesh(new T.SphereGeometry(7,20,16),new T.MeshBasicMaterial({col
 const starsG=new T.BufferGeometry(),sp=[];for(let i=0;i<260;i++)sp.push((Math.random()-.5)*320,20+Math.random()*110,-170-Math.random()*30);starsG.setAttribute('position',new T.Float32BufferAttribute(sp,3));
 const stars=new T.Points(starsG,new T.PointsMaterial({color:0xffffff,size:2.2,sizeAttenuation:false,fog:false,transparent:true,opacity:0}));scene.add(stars);
 const skyNightC=new T.Color(.07,.09,.24);
-function applyNight(k){skyMat.color.set(0xffffff).lerp(ovSky,ov*(1-k)*.5).lerp(skyNightC,k*.92).lerp(ovFog,fogK*(1-k)*.7);haze.material.opacity=1-k*.75;winMat.color.copy(winDay).lerp(winNight,k);sky.material.color.set(0xffffff).lerp(ovSky,ov*(1-k)).lerp(skyNightC,k);hillMats.forEach(m=>m.color.copy(m.userData.base).lerp(ovFog,fogK*(1-k)).lerp(skyNightC,k*.9));sunGlow.material.opacity=(1-k)*(1-ov);scene.background.copy(dayBg).lerp(nightBg,k);scene.fog.color.copy(dayFog).lerp(ovFog,ov*(1-k)).lerp(nightFog,k);scene.fog.near=58-44*fogK;scene.fog.far=172-92*fogK;hemi.intensity=(.9-.52*k)*(1-.2*ov);sun.intensity=(.9-.7*k)*(1-.55*ov);ground.material.color.copy(gDay).lerp(gNight,k);
+function applyNight(k){skyMat.color.set(0xffffff).lerp(ovSky,ov*(1-k)*.5).lerp(skyNightC,k*.92).lerp(ovFog,fogK*(1-k)*.7);haze.material.opacity=1-k*.75;winMat.color.copy(winDay).lerp(winNight,k);sky.material.color.set(0xffffff).lerp(ovSky,ov*(1-k)).lerp(skyNightC,k);hillMats.forEach(m=>m.color.copy(m.userData.base).lerp(ovFog,fogK*(1-k)).lerp(skyNightC,k*.9));sunGlow.material.opacity=(1-k)*(1-ov);scene.background.copy(dayBg).lerp(nightBg,k);scene.fog.color.copy(dayFog).lerp(ovFog,ov*(1-k)).lerp(nightFog,k);scene.fog.near=58-44*fogK;scene.fog.far=172-100*fogK;hemi.intensity=(.9-.52*k)*(1-.2*ov);sun.intensity=(.9-.7*k)*(1-.55*ov);ground.material.color.copy(gDay).lerp(gNight,k);
  sunM.material.opacity=(1-k)*(1-ov);moon.material.opacity=k;stars.material.opacity=k;cloudMats.forEach(m=>m.color.copy(cDay).lerp(cRain,ov*(1-k)*.75).lerp(cNight,k));birds.forEach(b=>b.visible=k<.3)}
 const zs=[0,1,2].map(i=>{const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.font='bold 54px Arial';x.fillStyle='#fff';x.strokeStyle='#5b6bd6';x.lineWidth=5;x.textAlign='center';x.textBaseline='middle';x.strokeText('Z',32,34);x.fillText('Z',32,34);
  const sp=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(c),transparent:true,depthTest:false}));sp.visible=false;scene.add(sp);return sp});
@@ -415,7 +415,7 @@ function ambUpdate(rv){if(!AC||AC.state!='running')return;if(!ambG&&rv>.02){cons
 function updateWeather(rdt,now){
  if(wMode==0&&st=='run'&&dist>nextW){const o=['clear','rain','snow','fog','clear','rain'].filter(x=>x!=wType);setWType(o[Math.random()*o.length|0]);nextW=dist+650+Math.random()*500}
  const k=Math.min(1,rdt*.5);wRain+=((wType=='rain'?1:0)-wRain)*k;wSnow+=((wType=='snow'?1:0)-wSnow)*k;wFog+=((wType=='fog'?1:0)-wFog)*k;
- ov=Math.max(wRain*.9,wSnow*.7,wFog*.6);fogK=Math.max(wRain*.3,wSnow*.4,wFog);
+ ov=Math.max(wRain*.9,wSnow*.7,wFog*.6);fogK=Math.max(wRain*.3,wSnow*.6,wFog);
  if(Math.abs(ov-lastOv)>.003||Math.abs(fogK-lastFg)>.003){lastOv=ov;lastFg=fogK;lastNK=-1}
  rainL.visible=wRain>.02;if(rainL.visible){rainM.opacity=.5*wRain;const p=rainPos;for(let i=0;i<RN;i++){const o=i*6;p[o+1]-=rainV[i]*rdt;p[o+2]+=mvLast;p[o]-=.9*rdt;if(p[o+1]<0||p[o+2]>9){p[o]=(Math.random()-.5)*32;p[o+1]=13+Math.random()*3;p[o+2]=-70+Math.random()*30}
   p[o+3]=p[o]+.07;p[o+4]=p[o+1]+.55+rainV[i]*.02;p[o+5]=p[o+2]-.2}rainG.attributes.position.needsUpdate=true}
@@ -489,7 +489,7 @@ bindBtn('start',startGame);bindBtn('again',startGame);
 bindBtn('shopb',()=>{renderShop();$('menu').classList.add('hidden');$('shop').classList.remove('hidden')});
 function goMenu(){reset();st='menu';['over','shop','hud'].forEach(i=>$(i).classList.add('hidden'));$('menu').classList.remove('hidden');updateMenu()}
 bindBtn('shopback',goMenu);bindBtn('tomenu',goMenu);bindBtn('shop2',()=>{renderShop();$('over').classList.add('hidden');$('shop').classList.remove('hidden')});
-bindBtn('snd',()=>setMute(!muted));bindBtn('wx',cycleWeather);
+bindBtn('snd',()=>setMute(!muted));
 $('skl').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-id]');if(b)shopClick(b.dataset.id)});
 updateMenu();
 reset();
