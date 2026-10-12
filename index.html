@@ -49,7 +49,8 @@ const scene=new T.Scene();scene.background=new T.Color(0x8fd3ff);scene.fog=new T
 const cam=new T.PerspectiveCamera(60,1,.5,300);
 const hemi=new T.HemisphereLight(0xeaf6ff,0xd9c9a0,.9);scene.add(hemi);
 const sun=new T.DirectionalLight(0xfff0c8,.95);sun.position.set(-9,20,-2);sun.target.position.set(0,0,-8);scene.add(sun,sun.target);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);{const c=sun.shadow.camera;c.left=-9;c.right=9;c.top=26;c.bottom=-14;c.near=1;c.far=70}sun.shadow.bias=-.0008;
-function resize(){renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',resize);resize();
+var post=null;function postResize(){if(post)post.resize()}
+function resize(){renderer.setSize(innerWidth,innerHeight);postResize();cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',resize);resize();
 
 const mats={};const M=(c,o={})=>mats[c+JSON.stringify(o)]||(mats[c+JSON.stringify(o)]=new T.MeshLambertMaterial(Object.assign({color:c},o)));
 function box(w,h,d,c,x=0,y=0,z=0,p){const m=new T.Mesh(new T.BoxGeometry(w,h,d),M(c));m.position.set(x,y,z);(p||scene).add(m);return m}
@@ -425,8 +426,27 @@ function updateWeather(rdt,now){
  ambUpdate(wRain)}
 let qAcc=0,qN=0,qLow=0,qHold=0,qUp=false;
 function qualityTick(rdt){if(st!='run')return;qAcc+=rdt;qN++;if(qHold>0)qHold--;if(qN<75)return;const avg=qAcc/qN;qAcc=0;qN=0;
- if(avg>.025){if(PR>1.01){PR=Math.max(1,PR-.5);renderer.setPixelRatio(PR);renderer.setSize(innerWidth,innerHeight);qHold=300;if(qUp){PRmax=PR;qUp=false}}else if(++qLow>=2&&sun.castShadow){sun.castShadow=false;renderer.shadowMap.enabled=false;scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true)})}}
- else if(avg<.0185&&PR<PRmax-.01&&qHold<=0){PR=Math.min(PRmax,PR+.25);renderer.setPixelRatio(PR);renderer.setSize(innerWidth,innerHeight);qHold=600;qUp=true}}
+ if(avg>.025){if(PR>1.01){PR=Math.max(1,PR-.5);renderer.setPixelRatio(PR);renderer.setSize(innerWidth,innerHeight);postResize();qHold=300;if(qUp){PRmax=PR;qUp=false}}else if(post&&post.on){post.on=false}else if(++qLow>=2&&sun.castShadow){sun.castShadow=false;renderer.shadowMap.enabled=false;scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true)})}}
+ else if(avg<.0185&&PR<PRmax-.01&&qHold<=0){PR=Math.min(PRmax,PR+.25);renderer.setPixelRatio(PR);renderer.setSize(innerWidth,innerHeight);postResize();qHold=600;qUp=true}}
+// ---------- СВЕЧЕНИЕ И ЦВЕТОКОРРЕКЦИЯ ----------
+function makePost(){const gl2=renderer.capabilities.isWebGL2;
+ const mk=(w,h,ms)=>ms&&gl2?new T.WebGLMultisampleRenderTarget(w,h,{format:T.RGBAFormat}):new T.WebGLRenderTarget(w,h,{format:T.RGBAFormat,minFilter:T.LinearFilter,magFilter:T.LinearFilter,depthBuffer:!!ms});
+ const rtS=mk(4,4,true),rtA=mk(4,4,false),rtB=mk(4,4,false),qs=new T.Scene(),qc=new T.OrthographicCamera(-1,1,1,-1,0,1),quad=new T.Mesh(new T.PlaneGeometry(2,2),null);qs.add(quad);
+ const V='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',M0={vertexShader:V,depthTest:false,depthWrite:false};
+ const bright=new T.ShaderMaterial(Object.assign({uniforms:{t:{value:null},th:{value:.84}},fragmentShader:'uniform sampler2D t;uniform float th;varying vec2 vUv;void main(){vec3 c=texture2D(t,vUv).rgb;float l=dot(c,vec3(.299,.587,.114));float k=smoothstep(th,th+.16,l);gl_FragColor=vec4(c*k,1.);}'},M0));
+ const blur=new T.ShaderMaterial(Object.assign({uniforms:{t:{value:null},dir:{value:new T.Vector2()}},fragmentShader:'uniform sampler2D t;uniform vec2 dir;varying vec2 vUv;void main(){vec3 s=texture2D(t,vUv).rgb*.227;s+=(texture2D(t,vUv+dir*1.385).rgb+texture2D(t,vUv-dir*1.385).rgb)*.316;s+=(texture2D(t,vUv+dir*3.23).rgb+texture2D(t,vUv-dir*3.23).rgb)*.07;gl_FragColor=vec4(s,1.);}'},M0));
+ const comp=new T.ShaderMaterial(Object.assign({uniforms:{tS:{value:null},tB:{value:null},bs:{value:.3},vig:{value:1.1},sat:{value:1.15},con:{value:1.06},ex:{value:1},tint:{value:new T.Color(1,1,1)}},fragmentShader:'uniform sampler2D tS,tB;uniform float bs,vig,sat,con,ex;uniform vec3 tint;varying vec2 vUv;void main(){vec3 c=texture2D(tS,vUv).rgb+texture2D(tB,vUv).rgb*bs;c*=ex;float l=dot(c,vec3(.299,.587,.114));c=mix(vec3(l),c,sat);c=(c-.5)*con+.5;c*=tint;vec2 d=vUv-.5;c*=1.-dot(d,d)*vig;gl_FragColor=vec4(c,1.);}'},M0));
+ const P0={on:true,bw:4,bh:4,resize(){const s=new T.Vector2();renderer.getDrawingBufferSize(s);rtS.setSize(s.x,s.y);P0.bw=Math.max(2,s.x>>2);P0.bh=Math.max(2,s.y>>2);rtA.setSize(P0.bw,P0.bh);rtB.setSize(P0.bw,P0.bh)},
+  render(){const r=renderer;r.setRenderTarget(rtS);r.render(scene,cam);
+   quad.material=bright;bright.uniforms.t.value=rtS.texture;r.setRenderTarget(rtA);r.render(qs,qc);
+   for(let i=0;i<2;i++){quad.material=blur;blur.uniforms.t.value=rtA.texture;blur.uniforms.dir.value.set(1/P0.bw,0);r.setRenderTarget(rtB);r.render(qs,qc);blur.uniforms.t.value=rtB.texture;blur.uniforms.dir.value.set(0,1/P0.bh);r.setRenderTarget(rtA);r.render(qs,qc)}
+   quad.material=comp;comp.uniforms.tS.value=rtS.texture;comp.uniforms.tB.value=rtA.texture;r.setRenderTarget(null);r.render(qs,qc)},bright,comp};
+ P0.resize();return P0}
+const tWarm=new T.Color(1.035,1,.955),tCool=new T.Color(.93,.97,1.05),tNight=new T.Color(.8,.9,1.12),_tc=new T.Color();
+function grade(){const u=post.comp.uniforms,nk=nightK;
+ u.sat.value=1.2-.24*ov-.08*nk;u.con.value=1.07+.05*nk-.05*wFog;u.ex.value=1-.05*ov+.07*nk;u.bs.value=.3+.12*nk+(P.boost>0?.22:0);
+ u.tint.value.copy(_tc.copy(tWarm).lerp(tCool,Math.min(1,ov*1.1)*(1-nk)).lerp(tNight,nk));post.bright.uniforms.th.value=.84-.14*nk}
+try{post=makePost()}catch(e){post=null;console.log('post off',e)}
 // ---------- ИГРА ----------
 let music=$('music'),introT=0,camZ=4.6,turnY=0,prevAir=false,landT=0,st='menu',speed,dist,coins,score,lane,px,py,vy,sliding,slideT,nextSpawn,runT,best=0,deadT;
 try{best=+localStorage.cyp||0}catch(e){}
@@ -568,6 +588,6 @@ function loop(now){requestAnimationFrame(loop);const rdt=Math.min((now-last)/100
  $('fx').classList.toggle('on',P.boost>0&&st=='run');coinM.emissiveIntensity=.85+.35*Math.sin(now/170);
  const kz=st=='run'||st=='dead'?1:0;camZ+=((kz?6.5:4.6)-camZ)*Math.min(1,dt*3);const k=(camZ-4.6)/1.9;camX+=(px-camX)*Math.min(1,rdt*3.2);camY+=(py*.2-camY)*Math.min(1,rdt*6);const rollT=st=='run'?-(LANES[lane]-px)*.006:0;camRoll+=(rollT-camRoll)*Math.min(1,rdt*5);
  cam.position.set(camX*.45+sh,2.4+1.8*k+camY+sh,camZ);cam.lookAt(camX*.22,1.1+.2*k,-8*k);cam.rotateZ(camRoll);
- renderer.render(scene,cam)}
+ if(post&&post.on){grade();post.render()}else renderer.render(scene,cam)}
 requestAnimationFrame(loop);
 </script></body></html>
