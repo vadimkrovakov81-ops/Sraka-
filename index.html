@@ -31,13 +31,27 @@ button:active{transform:translateY(4px);box-shadow:0 3px 0 #9c641b}
 .chip,#bon,#sl,#ms{background:rgba(12,36,72,.45)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 5px 14px rgba(0,20,60,.3);border-radius:16px}
 .panel{background:linear-gradient(160deg,rgba(42,111,184,.92),rgba(18,58,104,.94))!important;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 24px 60px rgba(0,10,40,.55),inset 0 1px 0 rgba(255,255,255,.35)!important}
 .center{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+
+.mnu{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:calc(16px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));pointer-events:none;color:#fff}
+.mnu button,.mnu .pill{pointer-events:auto}
+.mtop{display:flex;flex-direction:column;align-items:center;gap:8px}
+.logo2{font:900 50px/1 'Arial Rounded MT Bold',Arial,sans-serif;letter-spacing:1px;color:#ffd54f;text-shadow:0 3px 0 #c06a00,0 6px 0 #8a4300,0 12px 22px rgba(0,30,80,.5),0 0 18px rgba(255,200,60,.5);transform:rotate(-2deg);animation:logoB 2.4s ease-in-out infinite alternate}
+@keyframes logoB{to{transform:rotate(1.5deg) scale(1.04)}}
+.mtag{display:flex;align-items:center;gap:8px;padding:5px 14px 5px 6px;border-radius:22px;background:rgba(12,36,72,.42);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1.5px solid rgba(255,255,255,.38);font-weight:800;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.ava2{width:34px;height:34px;border-radius:50%;object-fit:cover;object-position:50% 40%;border:2px solid #ffd54f}
+.mpills{display:flex;gap:10px}.mpills .pill{padding:6px 16px;font-size:18px}
+.mbot{display:flex;flex-direction:column;align-items:center;gap:10px;padding-bottom:56px}
+.mbot button{width:min(400px,100%)}
+.play{font-size:32px;padding:20px;letter-spacing:1px;animation:pl 1.5s ease-in-out infinite;box-shadow:0 8px 0 #9c641b,0 0 28px rgba(255,200,60,.7)}
+@keyframes pl{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+.hint{font-size:12px;font-weight:700;text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.7);opacity:.95}
 </style></head><body><canvas id="c"></canvas>
 <div id="ui"><div id="hud" class="hud hidden"><div class="pill">🏃 <span id="dist">0</span> м</div><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">⭐ <span id="score">0</span></div></div>
 <div id="bon" class="hidden">👮 ×2 монет · <span id="bt">0</span> с</div><div id="pu"></div><div id="ms"></div><div id="flash"></div><div id="fx"></div><button id="snd" class="snd">🔊</button>
 <div id="shop" class="center hidden"><div class="panel"><div class="logo" style="font-size:30px">🛍 МАГАЗИН</div><div class="sub" style="margin:0">🪙 <b id="wal2">0</b></div><div id="skl"></div><button id="shopback">← НАЗАД</button></div></div>
 <div id="sl" class="hidden">🍼 Баю-бай · <span id="slt">0</span> с</div><div id="toast"></div>
-<div id="menu" class="center"><div class="panel"><img class="ava" src="doch.jpg" alt=""><div class="logo">🐥 ЦЫП-ЦЫП</div><div class="sub">Игра для ДОЧИ ♥<br>Беги, прыгай, собирай монеты!</div><div class="sub" style="margin:-8px 0 14px">🏆 РЕКОРД: <b id="mbest">0</b> &nbsp;•&nbsp; 🪙 <b id="wal">0</b></div><button id="start">▶ ИГРАТЬ</button><button id="shopb" class="b2">🛍 МАГАЗИН</button>
-<div class="tips"><div><b>← →</b>Полосы</div><div><b>↑</b>Прыжок</div><div><b>↓</b>Подкат</div></div><div class="sub" style="margin:14px 0 0;font-size:12px">Свайпы на телефоне • стрелки / WASD на компьютере</div></div></div>
+<div id="menu" class="mnu"><div class="mtop"><div class="logo2">ЦЫП-ЦЫП</div><div class="mtag"><img class="ava2" src="doch.jpg" alt="">Игра для ДОЧИ ♥</div><div class="mpills"><div class="pill">🏆 <b id="mbest">0</b></div><div class="pill">🪙 <b id="wal">0</b></div></div></div>
+<div class="mbot"><button id="start" class="play">▶ ИГРАТЬ</button><button id="shopb" class="b2">🛍 МАГАЗИН</button><div class="hint">← → полосы &nbsp;•&nbsp; ↑ прыжок &nbsp;•&nbsp; ↓ подкат</div></div></div>
 <div id="over" class="center hidden"><div class="panel"><img class="ava" src="doch.jpg" alt=""><div class="logo">💥 ОЙ!</div><div id="res" class="sub" style="text-align:left"></div><button id="again">↻ ЕЩЁ РАЗ</button><button id="shop2" class="b2">🛍 МАГАЗИН</button><button id="tomenu" class="b2">🏠 В МЕНЮ</button></div></div></div>
 <audio id="ssong" src="sleep_song.mp3" preload="auto"></audio><audio id="bsong" src="police_song.mp3" preload="auto"></audio><audio id="music" src="cypa_song.mp3" loop preload="auto"></audio>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -389,7 +403,7 @@ function getPU(o){P[o.k]=DUR[o.k];if(o.k=='boost')sfx('whoosh');toast(ICO[o.k]+'
 function rmItem(o,i){scene.remove(o.g);if(o.type!='coin'&&o.type!='pu'&&o.g.traverse)o.g.traverse(m=>{if(m.geometry&&!m.geometry.userData.keep)m.geometry.dispose()});items.splice(i,1)}
 function hitObs(o,i){if(P.boost>0||P.shield>0){if(P.boost<=0){P.shield=0;toast('🛡️ Щит спас!')}burst(o.g.position.x,1,0,0xffffff,14);sfx('pu');score+=50;o.dead=1;rmItem(o,i)}else die()}
 // ---------- СКОРОСТЬ И ЭФФЕКТЫ ----------
-let mvNow=0,dustT=0,popT=0,camX=0,camY=0,camRoll=0;
+let menuB=0,menuJ=0,blinkT=2,blinkU=0,blinkOn=false,mvNow=0,dustT=0,popT=0,camX=0,camY=0,camRoll=0;
 const slM=new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,depthWrite:false,fog:false}),slG=new T.BoxGeometry(.035,.035,1),SL=[];
 function slReset(m,far){const s=Math.random()<.5?-1:1;m.position.set(s*(2.0+Math.random()*5.5),.3+Math.random()*4.8,far?-70-Math.random()*20:-Math.random()*70);m.userData.sp=1.3+Math.random()*.9}
 for(let i=0;i<40;i++){const m=new T.Mesh(slG,slM);slReset(m,0);m.visible=false;scene.add(m);SL.push(m)}
@@ -509,7 +523,7 @@ bindBtn('start',startGame);bindBtn('again',startGame);
 bindBtn('shopb',()=>{renderShop();$('menu').classList.add('hidden');$('shop').classList.remove('hidden')});
 function goMenu(){reset();st='menu';['over','shop','hud'].forEach(i=>$(i).classList.add('hidden'));$('menu').classList.remove('hidden');updateMenu()}
 bindBtn('shopback',goMenu);bindBtn('tomenu',goMenu);bindBtn('shop2',()=>{renderShop();$('over').classList.add('hidden');$('shop').classList.remove('hidden')});
-bindBtn('snd',()=>setMute(!muted));
+bindBtn('snd',()=>setMute(!muted));$('c').addEventListener('pointerdown',()=>{if(st=='menu'){menuJ=1;chirp(2,.16)}});
 $('skl').addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-id]');if(b)shopClick(b.dataset.id)});
 updateMenu();
 reset();
@@ -558,7 +572,7 @@ function loop(now){requestAnimationFrame(loop);const rdt=Math.min((now-last)/100
   const tgt=run||(st=='intro'&&introT>1.05)?Math.PI:0;turnY+=(tgt-turnY)*Math.min(1,dt*7);
   if(prevAir&&!air){landT=.22;dustBurst(px)}prevAir=air;landT=Math.max(0,landT-dt);
   const lean=(LANES[lane]-px);
-  chick.position.set(px,py,0);blob.position.set(px,.03,0);const sc=Math.max(.4,1-py*.25);blob.scale.set(sc,sc,sc);
+  menuJ=Math.max(0,menuJ-rdt*1.7);const mb=st=='menu'?Math.abs(Math.sin(menuJ*Math.PI))*.55:0;chick.position.set(px,py+mb,0);blob.position.set(px,.03,0);if(st=='menu'||st=='intro'){blinkT-=rdt;if(blinkT<=0){blinkT=2+Math.random()*2.6;blinkU=.13}if(blinkU>0){blinkU-=rdt;if(!blinkOn){CK.setExpression('sleepy');blinkOn=true}}else if(blinkOn){CK.setExpression('neutral');blinkOn=false}}const sc=Math.max(.4,1-py*.25);blob.scale.set(sc,sc,sc);
   model.rotation.set(0,turnY+(run?lean*.18:0),run?-lean*.12:0);
   let sy=1,sxz=1,by=0,tilt=0;
   if(run){
@@ -587,7 +601,8 @@ function loop(now){requestAnimationFrame(loop);const rdt=Math.min((now-last)/100
  dust.forEach(d=>{if(d.l>0){d.l-=rdt;d.m.position.z+=mvNow;d.m.position.x+=d.vx*rdt;d.m.position.y+=d.vy*rdt;const k=1-Math.max(0,d.l)/d.L;d.m.scale.setScalar(d.s*(1+k*2.2));d.m.material.opacity=Math.max(0,(1-k))*.55;if(d.l<=0)d.m.visible=false}});
  $('fx').classList.toggle('on',P.boost>0&&st=='run');coinM.emissiveIntensity=.85+.35*Math.sin(now/170);
  const kz=st=='run'||st=='dead'?1:0;camZ+=((kz?6.5:4.6)-camZ)*Math.min(1,dt*3);const k=(camZ-4.6)/1.9;camX+=(px-camX)*Math.min(1,rdt*3.2);camY+=(py*.2-camY)*Math.min(1,rdt*6);const rollT=st=='run'?-(LANES[lane]-px)*.006:0;camRoll+=(rollT-camRoll)*Math.min(1,rdt*5);
- cam.position.set(camX*.45+sh,2.4+1.8*k+camY+sh,camZ);cam.lookAt(camX*.22,1.1+.2*k,-8*k);cam.rotateZ(camRoll);
+ menuB+=((st=='menu'?1:0)-menuB)*Math.min(1,rdt*3);{const swy=Math.sin(now/2600)*.5,x0=camX*.45+sh,y0=2.4+1.8*k+camY+sh,z0=camZ,lx=camX*.22,ly=1.1+.2*k,lz=-8*k;
+ cam.position.set(x0+(swy+.2-x0)*menuB,y0+(1.55-y0)*menuB,z0+(5.0-z0)*menuB);cam.lookAt(lx+(-.2-lx)*menuB,ly+(.85-ly)*menuB,lz*(1-menuB))}cam.rotateZ(camRoll);
  if(post&&post.on){grade();post.render()}else renderer.render(scene,cam)}
 requestAnimationFrame(loop);
 </script></body></html>
